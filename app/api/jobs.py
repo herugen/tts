@@ -25,16 +25,17 @@ from app.application.tts_service import TtsApplicationService
 
 router = APIRouter()
 
+
 @router.post(
     "/tts/jobs",
     summary="提交 TTS 任务（入队）",
     tags=["TTS Jobs"],
     response_model=oc8r.TtsJobResponse,
-    status_code=status.HTTP_202_ACCEPTED
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_tts_job(
     body: oc8r.CreateTtsJobRequest,
-    tts_service: TtsApplicationService = Depends(get_tts_service)
+    tts_service: TtsApplicationService = Depends(get_tts_service),
 ):
     """
     提交 TTS 任务，入队并返回 202 TtsJobResponse（状态为 queued）
@@ -43,15 +44,11 @@ async def create_tts_job(
     try:
         # 委托给TTS应用服务创建任务
         job = await tts_service.create_job(body)
-        
+
         # 构建响应
-        resp = oc8r.TtsJobResponse(
-            code=202,
-            message="Job queued",
-            job=job
-        )
-        return JSONResponse(status_code=202, content=resp.model_dump(mode='json'))
-        
+        resp = oc8r.TtsJobResponse(code=202, message="Job queued", job=job)
+        return JSONResponse(status_code=202, content=resp.model_dump(mode="json"))
+
     except ValueError as e:
         # 业务逻辑错误，如音色不存在
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -65,11 +62,10 @@ async def create_tts_job(
     summary="查询 TTS 任务（占位）",
     tags=["TTS Jobs"],
     response_model=oc8r.TtsJobResponse,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def get_tts_job(
-    job_id: str,
-    tts_service: TtsApplicationService = Depends(get_tts_service)
+    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     查询 TTS 任务
@@ -79,26 +75,23 @@ async def get_tts_job(
     job = await tts_service.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
-    resp = oc8r.TtsJobResponse(
-        code=200,
-        message="Job found",
-        job=job
-    )
-    return JSONResponse(status_code=200, content=resp.model_dump(mode='json'))
+
+    resp = oc8r.TtsJobResponse(code=200, message="Job found", job=job)
+    return JSONResponse(status_code=200, content=resp.model_dump(mode="json"))
+
 
 @router.get(
     "/tts/jobs",
     summary="查询 TTS 任务",
     tags=["TTS Jobs"],
     response_model=oc8r.TtsJobListResponse,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def list_tts_jobs(
     job_status: str = None,
     limit: int = 100,
     offset: int = 0,
-    tts_service: TtsApplicationService = Depends(get_tts_service)
+    tts_service: TtsApplicationService = Depends(get_tts_service),
 ):
     """
     查询 TTS 任务
@@ -106,24 +99,20 @@ async def list_tts_jobs(
     """
     # 委托给TTS应用服务获取任务列表
     jobs = await tts_service.list_jobs(status=job_status, limit=limit, offset=offset)
-    
-    resp = oc8r.TtsJobListResponse(
-        code=200,
-        message="Jobs found",
-        jobs=jobs
-    )
-    return JSONResponse(status_code=200, content=resp.model_dump(mode='json'))
+
+    resp = oc8r.TtsJobListResponse(code=200, message="Jobs found", jobs=jobs)
+    return JSONResponse(status_code=200, content=resp.model_dump(mode="json"))
+
 
 @router.post(
     "/tts/jobs/{job_id}/cancel",
     summary="取消 TTS 任务",
     tags=["TTS Jobs"],
     response_model=oc8r.TtsJobResponse,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def cancel_tts_job(
-    job_id: str,
-    tts_service: TtsApplicationService = Depends(get_tts_service)
+    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     取消 TTS 任务
@@ -134,14 +123,12 @@ async def cancel_tts_job(
         job = await tts_service.cancel_job(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
-        
+
         resp = oc8r.TtsJobResponse(
-            code=200,
-            message="Job cancelled successfully",
-            job=job
+            code=200, message="Job cancelled successfully", job=job
         )
-        return JSONResponse(status_code=200, content=resp.model_dump(mode='json'))
-        
+        return JSONResponse(status_code=200, content=resp.model_dump(mode="json"))
+
     except HTTPException as e:
         raise e
     except ValueError as e:
@@ -151,16 +138,16 @@ async def cancel_tts_job(
         # 其他系统错误
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 @router.post(
     "/tts/jobs/{job_id}/retry",
     summary="重试 TTS 任务",
     tags=["TTS Jobs"],
     response_model=oc8r.TtsJobResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def retry_tts_job(
-    job_id: str,
-    tts_service: TtsApplicationService = Depends(get_tts_service)
+    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     重试 TTS 任务
@@ -171,14 +158,12 @@ async def retry_tts_job(
         job = await tts_service.retry_job(job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
-        
+
         resp = oc8r.TtsJobResponse(
-            code=201,
-            message="Job retry created successfully",
-            job=job
+            code=201, message="Job retry created successfully", job=job
         )
-        return JSONResponse(status_code=201, content=resp.model_dump(mode='json'))
-        
+        return JSONResponse(status_code=201, content=resp.model_dump(mode="json"))
+
     except HTTPException as e:
         raise e
     except ValueError as e:

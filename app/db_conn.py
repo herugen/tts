@@ -20,19 +20,21 @@ from typing import Optional
 # 全局数据库连接
 db_conn: Optional[sqlite3.Connection] = None
 
+
 def get_db_conn() -> sqlite3.Connection:
     """
     获取全局数据库连接，用于 FastAPI Depends 注入
-    
+
     Returns:
         sqlite3.Connection: 全局数据库连接
-        
+
     Raises:
         RuntimeError: 如果数据库连接未初始化
     """
     if db_conn is None:
         raise RuntimeError("Database connection not initialized. Call startup() first.")
     return db_conn
+
 
 async def startup():
     """
@@ -42,15 +44,16 @@ async def startup():
     - 初始化数据库表结构
     """
     global db_conn
-    
+
     # 确保数据库目录存在
     os.makedirs("data", exist_ok=True)
-    
+
     # 建立全局连接
     db_conn = sqlite3.connect("data/tts.db", check_same_thread=False)
-    
+
     # 初始化数据库表结构
     _init_database()
+
 
 async def shutdown():
     """
@@ -61,15 +64,17 @@ async def shutdown():
         db_conn.close()
         db_conn = None
 
+
 def _init_database():
     """
     初始化数据库表结构
     """
     if db_conn is None:
         return
-        
+
     # 创建上传记录表
-    db_conn.execute("""
+    db_conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS uploads (
             id TEXT PRIMARY KEY,
             fileName TEXT NOT NULL,
@@ -78,10 +83,12 @@ def _init_database():
             durationSeconds REAL,
             createdAt TEXT NOT NULL
         )
-    """)
-    
+    """
+    )
+
     # 创建语音记录表
-    db_conn.execute("""
+    db_conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS voices (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
@@ -91,10 +98,12 @@ def _init_database():
             updatedAt TEXT NOT NULL,
             FOREIGN KEY (uploadId) REFERENCES uploads (id)
         )
-    """)
-    
+    """
+    )
+
     # 创建 TTS 任务表
-    db_conn.execute("""
+    db_conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS tts_jobs (
             id TEXT PRIMARY KEY,
             type TEXT NOT NULL,
@@ -105,6 +114,7 @@ def _init_database():
             result TEXT,
             error TEXT
         )
-    """)
-    
+    """
+    )
+
     db_conn.commit()

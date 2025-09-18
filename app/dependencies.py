@@ -28,77 +28,90 @@ from app.application.audio_service import AudioApplicationService
 from app.application.tts_processor import TtsTaskProcessor
 
 
-def get_tts_service(db: sqlite3.Connection = Depends(get_db_conn)) -> TtsApplicationService:
+def get_tts_service(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> TtsApplicationService:
     """
     获取TTS应用服务实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         TtsApplicationService: TTS应用服务实例
     """
     return app_container.get_tts_service(db)
 
 
-def get_voice_service(db: sqlite3.Connection = Depends(get_db_conn)) -> VoiceApplicationService:
+def get_voice_service(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> VoiceApplicationService:
     """
     获取Voice应用服务实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         VoiceApplicationService: Voice应用服务实例
     """
     return app_container.get_voice_service(db)
 
 
-def get_upload_service(db: sqlite3.Connection = Depends(get_db_conn)) -> UploadApplicationService:
+def get_upload_service(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> UploadApplicationService:
     """
     获取Upload应用服务实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         UploadApplicationService: Upload应用服务实例
     """
     return app_container.get_upload_service(db)
 
 
-def get_queue_service(db: sqlite3.Connection = Depends(get_db_conn)) -> QueueApplicationService:
+def get_queue_service(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> QueueApplicationService:
     """
     获取Queue应用服务实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         QueueApplicationService: Queue应用服务实例
     """
     return app_container.get_queue_service(db)
 
 
-def get_audio_service(db: sqlite3.Connection = Depends(get_db_conn)) -> AudioApplicationService:
+def get_audio_service(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> AudioApplicationService:
     """
     获取Audio应用服务实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         AudioApplicationService: Audio应用服务实例
     """
     return app_container.get_audio_service(db)
 
-def get_tts_processor(db: sqlite3.Connection = Depends(get_db_conn)) -> TtsTaskProcessor:
+
+def get_tts_processor(
+    db: sqlite3.Connection = Depends(get_db_conn),
+) -> TtsTaskProcessor:
     """
     获取TTS任务处理器实例
-    
+
     Args:
         db: 数据库连接
-        
+
     Returns:
         TtsTaskProcessor: TTS任务处理器实例
     """

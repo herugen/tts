@@ -17,25 +17,22 @@
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
 from app.models import oc8r
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 async def http_exception_handler(request: Request, exc: HTTPException):
     """
     处理HTTPException异常
     """
-    error_response = oc8r.ErrorResponse(
-        code=str(exc.status_code),
-        message=exc.detail
-    )
+    error_response = oc8r.ErrorResponse(code=str(exc.status_code), message=exc.detail)
     logger.warning(f"HTTP Exception: {exc.status_code} - {exc.detail}")
     return JSONResponse(
-        status_code=exc.status_code,
-        content=error_response.model_dump()
+        status_code=exc.status_code, content=error_response.model_dump()
     )
+
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """
@@ -46,28 +43,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         field = " -> ".join(str(loc) for loc in error["loc"])
         message = error["msg"]
         error_details.append(f"{field}: {message}")
-    
+
     error_message = "; ".join(error_details)
     error_response = oc8r.ErrorResponse(
-        code="VALIDATION_ERROR",
-        message=f"Request validation failed: {error_message}"
+        code="VALIDATION_ERROR", message=f"Request validation failed: {error_message}"
     )
     logger.warning(f"Validation Error: {error_message}")
-    return JSONResponse(
-        status_code=422,
-        content=error_response.model_dump()
-    )
+    return JSONResponse(status_code=422, content=error_response.model_dump())
+
 
 async def general_exception_handler(request: Request, exc: Exception):
     """
     处理通用异常
     """
     error_response = oc8r.ErrorResponse(
-        code="INTERNAL_SERVER_ERROR",
-        message="An unexpected error occurred"
+        code="INTERNAL_SERVER_ERROR", message="An unexpected error occurred"
     )
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content=error_response.model_dump()
-    )
+    return JSONResponse(status_code=500, content=error_response.model_dump())

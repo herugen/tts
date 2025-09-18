@@ -34,7 +34,7 @@ datamodel-code-generator>=0.25.0
 typing-extensions>=4.8.0
 
 # 开发工具
-# 可选：用于代码格式化和检查
-# black>=23.0.0
-# flake8>=6.0.0
-# mypy>=1.7.0
+# 代码格式化和检查
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.7.0

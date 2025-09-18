@@ -24,7 +24,11 @@ from app.api import jobs
 from app.api import audio
 from app.db_conn import startup, shutdown
 from app.infra.queue import start_queue, stop_queue
-from app.middleware import http_exception_handler, validation_exception_handler, general_exception_handler
+from app.middleware import (
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler,
+)
 from app.container import app_container
 import logging
 
@@ -32,30 +36,32 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """应用生命周期管理"""
     # 启动时执行
     await startup()
-    
+
     # 初始化应用服务容器
     logger.info("Initializing application services...")
     # 预初始化所有服务，确保依赖关系正确
     app_container.get_all_services()
     logger.info("Application services initialized successfully")
-    
+
     # 通过容器获取TTS任务处理器
     tts_processor = app_container.get_tts_processor()
-    
+
     # 启动队列，注入TTS处理器
     await start_queue(tts_processor.process_tts_task)
     logger.info("Queue started with TTS processor")
-    
+
     yield
-    
+
     # 关闭时执行
     await stop_queue()
     await shutdown()
+
 
 # 创建 FastAPI 应用并挂载路由
 app = FastAPI(lifespan=lifespan)

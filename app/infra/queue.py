@@ -25,11 +25,10 @@ from app.models import oc8r
 logger = logging.getLogger(__name__)
 
 
-
 class QueueManager:
     """
     队列管理器 - 纯技术实现
-    
+
     负责任务入队、状态查询，支持后续扩展多种队列后端。
     """
 
@@ -56,10 +55,7 @@ class QueueManager:
         :return: 任务ID
         """
         task_id = str(uuid.uuid4())
-        task = {
-            "id": task_id,
-            "payload": payload
-        }
+        task = {"id": task_id, "payload": payload}
         await self.queue.put(task)
         self.status_map[task_id] = {}
         await self.set_status(task_id, oc8r.JobStatus.queued)
@@ -73,7 +69,9 @@ class QueueManager:
         """
         return self.status_map.get(task_id, {"status": "not_found", "result": None})
 
-    async def set_status(self, task_id: str, status: oc8r.JobStatus, result: Optional[Any] = None):
+    async def set_status(
+        self, task_id: str, status: oc8r.JobStatus, result: Optional[Any] = None
+    ):
         """
         更新任务状态。
         :param task_id: 任务ID
@@ -100,10 +98,7 @@ class QueueManager:
         重试任务。
         :param task_id: 任务ID
         """
-        task = {
-            "id": task_id,
-            "payload": payload
-        }
+        task = {"id": task_id, "payload": payload}
         await self.queue.put(task)
         await self.set_status(task_id, oc8r.JobStatus.queued)
 
@@ -113,13 +108,14 @@ class QueueManager:
         :return: 正在运行的任务ID
         """
         return self.current_task_id
-    
+
     def queue_length(self) -> int:
         """
         获取队列长度。
         :return: 队列长度
         """
         return self.queue.qsize()
+
 
 class Worker:
     """
@@ -145,16 +141,23 @@ class Worker:
             task_id = task["id"]
             payload = task["payload"]
             try:
-                if self.queue_manager.status(task_id).get("status") == oc8r.JobStatus.cancelled:
+                if (
+                    self.queue_manager.status(task_id).get("status")
+                    == oc8r.JobStatus.cancelled
+                ):
                     continue
                 self.queue_manager.current_task_id = task_id
                 await self.queue_manager.set_status(task_id, oc8r.JobStatus.running)
                 result = await self.handler(payload)
-                await self.queue_manager.set_status(task_id, oc8r.JobStatus.succeeded, result)
-                
+                await self.queue_manager.set_status(
+                    task_id, oc8r.JobStatus.succeeded, result
+                )
+
             except Exception as e:
                 logger.error("Task processing failed: %s", str(e))
-                await self.queue_manager.set_status(task_id, oc8r.JobStatus.failed, str(e))
+                await self.queue_manager.set_status(
+                    task_id, oc8r.JobStatus.failed, str(e)
+                )
             finally:
                 self.queue_manager.current_task_id = None
                 self.queue_manager.queue.task_done()
@@ -165,11 +168,13 @@ class Worker:
         """
         self._running = False
 
+
 # ---- 应用级单例与启动/停止钩子 ----
 
 queue_manager = QueueManager()
 _worker: Optional[Worker] = None
 _worker_task: Optional[asyncio.Task] = None
+
 
 async def _default_task_handler(_payload: Any) -> Any:
     """
@@ -180,21 +185,23 @@ async def _default_task_handler(_payload: Any) -> Any:
     await asyncio.sleep(0.05)
     return {"ok": True, "message": "Default handler processed task"}
 
+
 async def start_queue(task_handler: Callable = None) -> None:
     """
     启动队列
-    
+
     Args:
         task_handler: 任务处理器，由应用层注入
     """
     global _worker, _worker_task
     if _worker_task is not None:
         return
-    
+
     # 使用注入的处理器或默认处理器
     handler = task_handler or _default_task_handler
     _worker = Worker(queue_manager, handler)
     _worker_task = asyncio.create_task(_worker.run())
+
 
 async def stop_queue() -> None:
     """

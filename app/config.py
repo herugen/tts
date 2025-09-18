@@ -8,24 +8,17 @@
 - ALLOWED_MIME_TYPES: 允许上传的音频 MIME 类型集合
 - ALLOWED_EXTENSIONS: 允许上传的音频扩展名集合
 """
+
 import os
 
 # 上传文件存储目录
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "data/uploads")
 
 # 允许上传的音频 MIME 类型集合
-ALLOWED_MIME_TYPES = {
-    "audio/wav",
-    "audio/mpeg",
-    "audio/mp4"
-}
+ALLOWED_MIME_TYPES = {"audio/wav", "audio/mpeg", "audio/mp4"}
 
 # 允许上传的音频扩展名集合
-ALLOWED_EXTENSIONS = {
-    "wav",
-    "mp3",
-    "mp4"
-}
+ALLOWED_EXTENSIONS = {"wav", "mp3", "mp4"}
 
 # 单个上传文件最大允许大小（字节）
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024

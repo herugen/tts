@@ -45,6 +45,18 @@ test:
 	@echo "🧪 运行所有测试..."
 	python tests/scripts/run_tests.py
 
+# 代码格式化
+format:
+	@echo "🎨 格式化代码..."
+	black app/ tests/
+	@echo "✅ 代码格式化完成"
+
+# 代码质量检查
+lint:
+	@echo "🔍 代码质量检查..."
+	flake8 app/ tests/
+	@echo "✅ 代码质量检查完成"
+
 # 清理测试文件
 clean:
 	@echo "🧹 清理测试文件..."
@@ -74,6 +86,8 @@ help:
 	@echo "  make gen               - 生成模型文件"
 	@echo "  make run               - 运行应用"
 	@echo "  make test              - 运行所有测试"
+	@echo "  make format            - 格式化代码"
+	@echo "  make lint              - 代码质量检查"
 	@echo "  make clean             - 清理测试文件"
 	@echo "  make help              - 显示帮助信息"
 	@echo ""

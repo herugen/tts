@@ -10,13 +10,13 @@ from pydantic import AnyUrl, BaseModel, Field
 
 
 class ErrorResponse(BaseModel):
-    code: str = Field(..., description='错误码')
-    message: str = Field(..., description='错误信息')
+    code: str = Field(..., description="错误码")
+    message: str = Field(..., description="错误信息")
 
 
 class PendingResponse(BaseModel):
     code: int = Field(..., examples=[202])
-    message: str = Field(..., examples=['Preview is generating'])
+    message: str = Field(..., examples=["Preview is generating"])
 
 
 class Pagination(BaseModel):
@@ -26,18 +26,18 @@ class Pagination(BaseModel):
 
 
 class JobStatus(Enum):
-    queued = 'queued'
-    running = 'running'
-    succeeded = 'succeeded'
-    failed = 'failed'
-    cancelled = 'cancelled'
+    queued = "queued"
+    running = "running"
+    succeeded = "succeeded"
+    failed = "failed"
+    cancelled = "cancelled"
 
 
 class TtsMode(Enum):
-    speaker = 'speaker'
-    reference = 'reference'
-    vector = 'vector'
-    text = 'text'
+    speaker = "speaker"
+    reference = "reference"
+    vector = "vector"
+    text = "text"
 
 
 class GenerationArgs(BaseModel):
@@ -63,27 +63,27 @@ class EmotionFactors(BaseModel):
 
 
 class OutputFormat(Enum):
-    wav = 'wav'
+    wav = "wav"
 
 
 class CreateTtsJobRequest(BaseModel):
     text: str
     mode: TtsMode
-    voiceId: str = Field(..., description='既有克隆音色ID')
+    voiceId: str = Field(..., description="既有克隆音色ID")
     emotionAudioId: Optional[str] = Field(
-        None, description='提前上传的参考情感音频Upload ID'
+        None, description="提前上传的参考情感音频Upload ID"
     )
-    emotionWeight: Optional[float] = Field(0.8, description='情感参考强度')
-    emotionFactors: Optional[EmotionFactors] = Field(None, description='情感因子')
-    emotionRandom: Optional[bool] = Field(False, description='情感随机采样')
-    emotionText: Optional[str] = Field(None, description='情感描述文本')
+    emotionWeight: Optional[float] = Field(0.8, description="情感参考强度")
+    emotionFactors: Optional[EmotionFactors] = Field(None, description="情感因子")
+    emotionRandom: Optional[bool] = Field(False, description="情感随机采样")
+    emotionText: Optional[str] = Field(None, description="情感描述文本")
     maxTextTokensPerSegment: Optional[int] = 120
     generationArgs: Optional[GenerationArgs] = None
     outputFormat: Optional[OutputFormat] = OutputFormat.wav
 
 
 class Type(Enum):
-    tts = 'tts'
+    tts = "tts"
 
 
 class Result(BaseModel):
@@ -99,10 +99,10 @@ class TtsJob(BaseModel):
     queuedPosition: Optional[int] = None
     etaSeconds: Optional[int] = None
     createdAt: str = Field(
-        ..., description='创建时间,ISO 格式字符串', examples=['2021-01-01T00:00:00Z']
+        ..., description="创建时间,ISO 格式字符串", examples=["2021-01-01T00:00:00Z"]
     )
     updatedAt: str = Field(
-        ..., description='更新时间,ISO 格式字符串', examples=['2021-01-01T00:00:00Z']
+        ..., description="更新时间,ISO 格式字符串", examples=["2021-01-01T00:00:00Z"]
     )
     request: Optional[CreateTtsJobRequest] = None
     result: Optional[Result] = None
@@ -111,20 +111,20 @@ class TtsJob(BaseModel):
 
 class TtsJobResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])
     job: TtsJob
 
 
 class TtsJobListResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])
     jobs: List[TtsJob]
     pagination: Optional[Pagination] = None
 
 
 class UploadAudioRequest(BaseModel):
     file: bytes
-    filename: Optional[str] = Field(None, description='客户端建议的文件名')
+    filename: Optional[str] = Field(None, description="客户端建议的文件名")
 
 
 class Upload(BaseModel):
@@ -134,20 +134,20 @@ class Upload(BaseModel):
     sizeBytes: int
     durationSeconds: Optional[float] = None
     createdAt: str = Field(
-        ..., description='创建时间,ISO 格式字符串', examples=['2021-01-01T00:00:00Z']
+        ..., description="创建时间,ISO 格式字符串", examples=["2021-01-01T00:00:00Z"]
     )
 
 
 class UploadResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])
     upload: Upload
 
 
 class CreateVoiceRequest(BaseModel):
-    name: str = Field(..., description='音色显示名称，需在用户空间内唯一')
+    name: str = Field(..., description="音色显示名称，需在用户空间内唯一")
     description: Optional[str] = None
-    uploadId: str = Field(..., description='关联的上传音频ID')
+    uploadId: str = Field(..., description="关联的上传音频ID")
 
 
 class Voice(BaseModel):
@@ -156,22 +156,22 @@ class Voice(BaseModel):
     description: Optional[str] = None
     uploadId: str
     createdAt: str = Field(
-        ..., description='更新时间,ISO 格式字符串', examples=['2021-01-01T00:00:00Z']
+        ..., description="更新时间,ISO 格式字符串", examples=["2021-01-01T00:00:00Z"]
     )
     updatedAt: str = Field(
-        ..., description='更新时间,ISO 格式字符串', examples=['2021-01-01T00:00:00Z']
+        ..., description="更新时间,ISO 格式字符串", examples=["2021-01-01T00:00:00Z"]
     )
 
 
 class VoiceResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])
     voice: Voice
 
 
 class VoiceListResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])
     voices: List[Voice]
     pagination: Optional[Pagination] = None
 
@@ -185,10 +185,10 @@ class QueueStatus(BaseModel):
 
 class QueueStatusResponse(BaseModel):
     code: int = Field(..., examples=[200])
-    message: str = Field(..., examples=['OK'])
+    message: str = Field(..., examples=["OK"])
     status: QueueStatus
 
 
 class HealthResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
-    message: Optional[str] = Field(None, examples=['OK'])
+    message: Optional[str] = Field(None, examples=["OK"])

@@ -18,11 +18,9 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
+
 @router.get(
-    "/health",
-    summary="健康检查",
-    tags=["Health"],
-    status_code=status.HTTP_200_OK
+    "/health", summary="健康检查", tags=["Health"], status_code=status.HTTP_200_OK
 )
 async def health_check():
     """
@@ -30,9 +28,5 @@ async def health_check():
     - 返回 HealthResponse 格式，包含 code 和 message 字段
     - 目前仅返回静态 OK 状态
     """
-    resp = {
-        "code": 200,
-        "message": "OK"
-    }
+    resp = {"code": 200, "message": "OK"}
     return JSONResponse(status_code=200, content=resp)
-

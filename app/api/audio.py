@@ -18,14 +18,10 @@ from app.application.audio_service import AudioApplicationService
 
 router = APIRouter()
 
-@router.get(
-    "/audio/{filename}",
-    summary="获取音频文件",
-    tags=["Audio"]
-)
+
+@router.get("/audio/{filename}", summary="获取音频文件", tags=["Audio"])
 async def get_audio_file(
-    filename: str,
-    audio_service: AudioApplicationService = Depends(get_audio_service)
+    filename: str, audio_service: AudioApplicationService = Depends(get_audio_service)
 ):
     """
     获取音频文件
@@ -33,24 +29,15 @@ async def get_audio_file(
     """
     # 验证文件名格式
     if not filename:
-        raise HTTPException(
-            status_code=400,
-            detail="Filename is required"
-        )
-    
+        raise HTTPException(status_code=400, detail="Filename is required")
+
     # 检查文件扩展名
-    if not filename.endswith('.wav'):
+    if not filename.endswith(".wav"):
         # 对于不支持的格式，抛出HTTP异常
-        raise HTTPException(
-            status_code=400,
-            detail="Only WAV files are supported"
-        )
+        raise HTTPException(status_code=400, detail="Only WAV files are supported")
     # 委托给Audio应用服务获取音频文件
     file_response = await audio_service.get_audio_file(filename)
     if not file_response:
-        raise HTTPException(
-            status_code=404, 
-            detail="Audio file not found"
-        )
-    
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
     return file_response

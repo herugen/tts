@@ -10,30 +10,30 @@ from pydantic import BaseModel, Field, RootModel
 
 class Base(BaseModel):
     prompt_audio: str = Field(
-        ..., description='Base64-encoded speaker reference audio bytes (.wav).'
+        ..., description="Base64-encoded speaker reference audio bytes (.wav)."
     )
-    text: str = Field(..., description='Target text to synthesize.')
+    text: str = Field(..., description="Target text to synthesize.")
     max_text_tokens_per_segment: Optional[int] = Field(
-        120, description='Max text tokens per segment (affects speed and quality).'
+        120, description="Max text tokens per segment (affects speed and quality)."
     )
 
 
 class GenerationArgs(BaseModel):
     do_sample: Optional[bool] = Field(
-        True, description='Enable sampling in the AR generator.'
+        True, description="Enable sampling in the AR generator."
     )
-    top_p: Optional[float] = Field(0.8, description='Nucleus sampling parameter.')
+    top_p: Optional[float] = Field(0.8, description="Nucleus sampling parameter.")
     top_k: Optional[int] = Field(
-        30, description='Top-K sampling parameter (0 disables).'
+        30, description="Top-K sampling parameter (0 disables)."
     )
-    temperature: Optional[float] = Field(0.8, description='Sampling temperature.')
+    temperature: Optional[float] = Field(0.8, description="Sampling temperature.")
     length_penalty: Optional[float] = Field(
-        0.0, description='Beam search length penalty.'
+        0.0, description="Beam search length penalty."
     )
-    num_beams: Optional[int] = Field(3, description='Number of beams for beam search.')
-    repetition_penalty: Optional[float] = Field(10.0, description='Repetition penalty.')
+    num_beams: Optional[int] = Field(3, description="Number of beams for beam search.")
+    repetition_penalty: Optional[float] = Field(10.0, description="Repetition penalty.")
     max_mel_tokens: Optional[int] = Field(
-        1500, description='Max mel tokens to generate (too small truncates audio).'
+        1500, description="Max mel tokens to generate (too small truncates audio)."
     )
 
 
@@ -56,11 +56,11 @@ class ReferenceAudio(Base):
     generation_args: GenerationArgs
     emotion_audio: str = Field(
         ...,
-        description='Base64-encoded emotion reference audio bytes (.wav). Required.',
+        description="Base64-encoded emotion reference audio bytes (.wav). Required.",
     )
     emotion_weight: Optional[float] = Field(
         0.8,
-        description='Strength for emotion reference audio; internally scaled by 0.8.',
+        description="Strength for emotion reference audio; internally scaled by 0.8.",
     )
 
 
@@ -69,23 +69,23 @@ class Vectors(Base):
     emotion_factors: EmotionFactors
     emotion_random: Optional[bool] = Field(
         False,
-        description='Enables stochastic emotion sampling (lower voice cloning fidelity).',
+        description="Enables stochastic emotion sampling (lower voice cloning fidelity).",
     )
 
 
 class TextPrompt(Base):
     generation_args: GenerationArgs
     emotion_text: str = Field(
-        ..., description='Emotion description text (empty treated as null).'
+        ..., description="Emotion description text (empty treated as null)."
     )
     emotion_random: Optional[bool] = Field(
         False,
-        description='Enables stochastic emotion sampling (lower voice cloning fidelity).',
+        description="Enables stochastic emotion sampling (lower voice cloning fidelity).",
     )
 
 
 class AudioWav(RootModel[str]):
-    root: str = Field(..., description='Base64-encoded WAV audio bytes')
+    root: str = Field(..., description="Base64-encoded WAV audio bytes")
 
 
 class ErrorResponse(BaseModel):

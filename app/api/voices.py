@@ -25,16 +25,17 @@ from app.application.voice_service import VoiceApplicationService
 
 router = APIRouter()
 
+
 @router.post(
     "/voices",
     summary="创建 Voice",
     tags=["Voices"],
     response_model=oc8r.VoiceResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_voice(
     body: oc8r.CreateVoiceRequest,
-    voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_service: VoiceApplicationService = Depends(get_voice_service),
 ):
     """
     创建 Voice
@@ -43,15 +44,11 @@ async def create_voice(
     try:
         # 委托给Voice应用服务创建音色
         voice = await voice_service.create_voice(body)
-        
+
         # 构建响应
-        resp = oc8r.VoiceResponse(
-            code=201,
-            message="Voice created",
-            voice=voice
-        )
+        resp = oc8r.VoiceResponse(code=201, message="Voice created", voice=voice)
         return JSONResponse(status_code=201, content=resp.model_dump())
-        
+
     except ValueError as e:
         # 业务逻辑错误，如音色名称重复或uploadId不存在
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -59,16 +56,17 @@ async def create_voice(
         # 其他系统错误
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 @router.get(
     "/voices",
     summary="分页查询 Voice",
     tags=["Voices"],
-    response_model=oc8r.VoiceListResponse
+    response_model=oc8r.VoiceListResponse,
 )
 async def list_voices(
     limit: int = Query(100, ge=0),
     offset: int = Query(0, ge=0),
-    voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_service: VoiceApplicationService = Depends(get_voice_service),
 ):
     """
     分页查询 Voice
@@ -76,23 +74,19 @@ async def list_voices(
     """
     # 委托给Voice应用服务获取音色列表
     voices = await voice_service.list_voices(offset=offset, limit=limit)
-    
-    resp = oc8r.VoiceListResponse(
-        code=200,
-        message="Success",
-        voices=voices
-    )
+
+    resp = oc8r.VoiceListResponse(code=200, message="Success", voices=voices)
     return resp
+
 
 @router.get(
     "/voices/{voice_id}",
     summary="查询单个 Voice",
     tags=["Voices"],
-    response_model=oc8r.VoiceResponse
+    response_model=oc8r.VoiceResponse,
 )
 async def get_voice(
-    voice_id: str,
-    voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_id: str, voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
     查询单个 Voice
@@ -102,23 +96,19 @@ async def get_voice(
     voice = await voice_service.get_voice(voice_id)
     if not voice:
         raise HTTPException(status_code=404, detail="Voice not found")
-    
-    resp = oc8r.VoiceResponse(
-        code=200,
-        message="Success",
-        voice=voice
-    )
+
+    resp = oc8r.VoiceResponse(code=200, message="Success", voice=voice)
     return resp
+
 
 @router.delete(
     "/voices/{voice_id}",
     summary="删除 Voice",
     tags=["Voices"],
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_voice(
-    voice_id: str,
-    voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_id: str, voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
     删除 Voice 及其关联的 Upload 记录和文件
@@ -129,10 +119,10 @@ async def delete_voice(
         success = await voice_service.delete_voice(voice_id)
         if not success:
             raise HTTPException(status_code=404, detail="Voice not found")
-        
+
         # 删除成功，返回204状态码（无响应体）
         return None
-        
+
     except HTTPException as e:
         raise e
     except ValueError as e:
@@ -141,4 +131,3 @@ async def delete_voice(
     except Exception:
         # 其他系统错误
         raise HTTPException(status_code=500, detail="Internal server error")
-

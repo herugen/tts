@@ -18,9 +18,15 @@ import uuid
 import logging
 from fastapi import UploadFile, HTTPException
 from typing import Tuple, Optional
-from app.config import UPLOAD_DIR, MAX_UPLOAD_BYTES, ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
+from app.config import (
+    UPLOAD_DIR,
+    MAX_UPLOAD_BYTES,
+    ALLOWED_EXTENSIONS,
+    ALLOWED_MIME_TYPES,
+)
 
 logger = logging.getLogger(__name__)
+
 
 class LocalFileStorage:
     """
@@ -69,7 +75,9 @@ class LocalFileStorage:
                 if size_bytes > MAX_UPLOAD_BYTES:
                     out_file.close()
                     os.remove(file_path)
-                    raise HTTPException(status_code=413, detail="File too large (max 20MB)")
+                    raise HTTPException(
+                        status_code=413, detail="File too large (max 20MB)"
+                    )
                 out_file.write(chunk)
 
         return file_id, file_path, file.content_type, size_bytes
@@ -139,14 +147,14 @@ class LocalFileStorage:
             # 确保输出目录存在
             output_dir = "data/outputs"
             os.makedirs(output_dir, exist_ok=True)
-            
+
             # 构建完整文件路径
             file_path = os.path.join(output_dir, filename)
-            
+
             # 写入文件
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(audio_data)
-            
+
             return file_path
         except OSError as e:
             logger.error("Failed to save audio file %s: %s", filename, str(e))
@@ -161,7 +169,7 @@ class LocalFileStorage:
         try:
             output_dir = "data/outputs"
             file_path = os.path.join(output_dir, filename)
-            
+
             if os.path.exists(file_path):
                 return file_path
             return None
@@ -178,7 +186,7 @@ class LocalFileStorage:
         try:
             output_dir = "data/outputs"
             file_path = os.path.join(output_dir, filename)
-            
+
             if os.path.exists(file_path):
                 os.remove(file_path)
                 return True
@@ -186,4 +194,3 @@ class LocalFileStorage:
         except OSError as e:
             logger.error("Failed to delete audio file %s: %s", filename, str(e))
             return False
-

@@ -20,15 +20,16 @@ from app.application.queue_service import QueueApplicationService
 
 router = APIRouter()
 
+
 @router.get(
     "/queue/status",
     summary="查询队列状态",
     tags=["Queue"],
     response_model=oc8r.QueueStatusResponse,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
 )
 async def get_queue_status(
-    queue_service: QueueApplicationService = Depends(get_queue_service)
+    queue_service: QueueApplicationService = Depends(get_queue_service),
 ):
     """
     查询队列状态接口
@@ -36,11 +37,6 @@ async def get_queue_status(
     """
     # 委托给Queue应用服务获取队列状态
     status_obj = await queue_service.get_status()
-    
-    resp = oc8r.QueueStatusResponse(
-        code=200,
-        message="OK",
-        status=status_obj
-    )
-    return JSONResponse(status_code=200, content=resp.model_dump())
 
+    resp = oc8r.QueueStatusResponse(code=200, message="OK", status=status_obj)
+    return JSONResponse(status_code=200, content=resp.model_dump())

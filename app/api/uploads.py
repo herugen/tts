@@ -22,39 +22,38 @@ from app.application.upload_service import UploadApplicationService
 
 router = APIRouter()
 
+
 @router.post(
     "/uploads",
     summary="上传音频文件",
     tags=["Uploads"],
     response_model=oc8r.UploadResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
 )
 async def upload_file(
     file: UploadFile = File(...),
-    upload_service: UploadApplicationService = Depends(get_upload_service)
+    upload_service: UploadApplicationService = Depends(get_upload_service),
 ):
     """
     上传音频文件接口
     - 委托给Upload应用服务处理业务逻辑
     """
     try:
-        if not file.content_type or not file.content_type.startswith('audio/'):
-            raise HTTPException(status_code=415, detail="Only audio files are supported")
-        
+        if not file.content_type or not file.content_type.startswith("audio/"):
+            raise HTTPException(
+                status_code=415, detail="Only audio files are supported"
+            )
+
         if file.size > 20 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="File too large")
-        
+
         # 委托给Upload应用服务上传文件
         upload = await upload_service.upload_file(file)
-        
+
         # 构建响应
-        resp = oc8r.UploadResponse(
-            code=201,
-            message="Upload succeeded",
-            upload=upload
-        )
+        resp = oc8r.UploadResponse(code=201, message="Upload succeeded", upload=upload)
         return JSONResponse(status_code=201, content=resp.model_dump())
-        
+
     except HTTPException as e:
         raise e
     except ValueError as e:
