@@ -156,6 +156,8 @@ class TtsApplicationService:
             raise ValueError(f"Cannot retry job with status: {job.status}")
 
         # 创建新的任务（重试）
+        if job.request is None:
+            raise ValueError("Cannot retry job without request data")
         new_job_id = await self.queue_manager.enqueue(
             {
                 "request": job.request.model_dump(),

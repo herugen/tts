@@ -44,7 +44,7 @@ async def upload_file(
                 status_code=415, detail="Only audio files are supported"
             )
 
-        if file.size > 20 * 1024 * 1024:
+        if file.size is not None and file.size > 20 * 1024 * 1024:
             raise HTTPException(status_code=413, detail="File too large")
 
         # 委托给Upload应用服务上传文件

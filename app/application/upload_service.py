@@ -12,6 +12,7 @@ Upload应用服务
 
 from datetime import datetime
 from fastapi import UploadFile
+from typing import Optional
 from app.models.oc8r import Upload
 from app.infra.storage import LocalFileStorage
 from app.infra.repositories import UploadRepository
@@ -25,7 +26,11 @@ class UploadApplicationService:
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
     """
 
-    def __init__(self, storage: LocalFileStorage, upload_repo: UploadRepository = None):
+    def __init__(
+        self,
+        storage: LocalFileStorage,
+        upload_repo: Optional[UploadRepository] = None
+    ):
         """
         初始化Upload应用服务
 
@@ -56,7 +61,7 @@ class UploadApplicationService:
         # 创建上传记录
         upload = Upload(
             id=file_id,
-            fileName=filename,
+            fileName=filename or "unknown",
             contentType=content_type,
             sizeBytes=size,
             durationSeconds=None,

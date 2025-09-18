@@ -14,7 +14,7 @@
 
 import uuid
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from app.infra.storage import LocalFileStorage
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class FileApplicationService:
         self.storage = storage
 
     async def save_audio_result(
-        self, audio_data: bytes, job_id: str = None
+        self, audio_data: bytes, job_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         保存音频结果 - 业务逻辑

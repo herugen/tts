@@ -18,6 +18,7 @@ coverage.xml
 *.swp
 *.swo
 *.orig
+.mypy_cache/
 
 # Test output and temp files
 *.testoutput

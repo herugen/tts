@@ -23,36 +23,55 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     处理HTTPException异常
     """
-    error_response = oc8r.ErrorResponse(code=str(exc.status_code), message=exc.detail)
-    logger.warning(f"HTTP Exception: {exc.status_code} - {exc.detail}")
-    return JSONResponse(
-        status_code=exc.status_code, content=error_response.model_dump()
-    )
+    if isinstance(exc, HTTPException):
+        error_response = oc8r.ErrorResponse(
+            code=str(exc.status_code), message=exc.detail
+        )
+        logger.warning(f"HTTP Exception: {exc.status_code} - {exc.detail}")
+        return JSONResponse(
+            status_code=exc.status_code, content=error_response.model_dump()
+        )
+    else:
+        # 如果不是 HTTPException，返回通用错误
+        error_response = oc8r.ErrorResponse(
+            code="500", message="Internal Server Error"
+        )
+        return JSONResponse(status_code=500, content=error_response.model_dump())
 
 
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
     """
     处理请求验证异常
     """
-    error_details = []
-    for error in exc.errors():
-        field = " -> ".join(str(loc) for loc in error["loc"])
-        message = error["msg"]
-        error_details.append(f"{field}: {message}")
+    if isinstance(exc, RequestValidationError):
+        error_details = []
+        for error in exc.errors():
+            field = " -> ".join(str(loc) for loc in error["loc"])
+            message = error["msg"]
+            error_details.append(f"{field}: {message}")
 
-    error_message = "; ".join(error_details)
-    error_response = oc8r.ErrorResponse(
-        code="VALIDATION_ERROR", message=f"Request validation failed: {error_message}"
-    )
-    logger.warning(f"Validation Error: {error_message}")
-    return JSONResponse(status_code=422, content=error_response.model_dump())
+        error_message = "; ".join(error_details)
+        error_response = oc8r.ErrorResponse(
+            code="VALIDATION_ERROR",
+            message=f"Request validation failed: {error_message}"
+        )
+        logger.warning(f"Validation Error: {error_message}")
+        return JSONResponse(status_code=422, content=error_response.model_dump())
+    else:
+        # 如果不是 RequestValidationError，返回通用错误
+        error_response = oc8r.ErrorResponse(
+            code="500", message="Internal Server Error"
+        )
+        return JSONResponse(status_code=500, content=error_response.model_dump())
 
 
-async def general_exception_handler(request: Request, exc: Exception):
+async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     处理通用异常
     """

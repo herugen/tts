@@ -51,11 +51,15 @@ class LocalFileStorage:
         :return: (文件ID, 文件路径, Content-Type, 文件字节数)
         """
         # 校验扩展名
+        if file.filename is None:
+            raise HTTPException(status_code=400, detail="Missing filename")
         ext = self._get_extension(file.filename)
         if not self._is_allowed_extension(ext):
             raise HTTPException(status_code=415, detail="Unsupported file extension")
 
         # 校验 MIME 类型
+        if file.content_type is None:
+            raise HTTPException(status_code=400, detail="Missing content type")
         if not self._is_allowed_mime(file.content_type):
             raise HTTPException(status_code=415, detail="Unsupported content type")
 
@@ -80,7 +84,12 @@ class LocalFileStorage:
                     )
                 out_file.write(chunk)
 
-        return file_id, file_path, file.content_type, size_bytes
+        return (
+            file_id,
+            file_path,
+            file.content_type or "application/octet-stream",
+            size_bytes
+        )
 
     def _get_extension(self, filename: str) -> str:
         """

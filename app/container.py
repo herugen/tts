@@ -57,7 +57,9 @@ class ApplicationContainer:
         self._services = {}
         self._initialized_services = set()
 
-    def get_tts_service(self, db: sqlite3.Connection = None) -> TtsApplicationService:
+    def get_tts_service(
+        self, db: Optional[sqlite3.Connection] = None
+    ) -> TtsApplicationService:
         """
         获取TTS应用服务实例
 
@@ -84,7 +86,7 @@ class ApplicationContainer:
         return self._services[service_key]
 
     def get_voice_service(
-        self, db: sqlite3.Connection = None
+        self, db: Optional[sqlite3.Connection] = None
     ) -> VoiceApplicationService:
         """
         获取Voice应用服务实例
@@ -112,7 +114,7 @@ class ApplicationContainer:
         return self._services[service_key]
 
     def get_upload_service(
-        self, db: sqlite3.Connection = None
+        self, db: Optional[sqlite3.Connection] = None
     ) -> UploadApplicationService:
         """
         获取Upload应用服务实例
@@ -137,7 +139,7 @@ class ApplicationContainer:
         return self._services[service_key]
 
     def get_queue_service(
-        self, db: sqlite3.Connection = None
+        self, db: Optional[sqlite3.Connection] = None
     ) -> QueueApplicationService:
         """
         获取Queue应用服务实例
@@ -161,7 +163,7 @@ class ApplicationContainer:
         return self._services[service_key]
 
     def get_audio_service(
-        self, db: sqlite3.Connection = None
+        self, db: Optional[sqlite3.Connection] = None
     ) -> AudioApplicationService:
         """
         获取Audio应用服务实例
@@ -184,7 +186,9 @@ class ApplicationContainer:
 
         return self._services[service_key]
 
-    def get_tts_processor(self, db: sqlite3.Connection = None) -> TtsTaskProcessor:
+    def get_tts_processor(
+        self, db: Optional[sqlite3.Connection] = None
+    ) -> TtsTaskProcessor:
         """通过容器获取TTS处理器，统一依赖管理"""
         if db is None:
             db = get_db_conn()
@@ -208,7 +212,9 @@ class ApplicationContainer:
 
         return self._services[service_key]
 
-    def get_file_service(self, db: sqlite3.Connection = None) -> FileApplicationService:
+    def get_file_service(
+        self, db: Optional[sqlite3.Connection] = None
+    ) -> FileApplicationService:
         """
         获取文件处理应用服务实例
 
@@ -230,7 +236,7 @@ class ApplicationContainer:
 
         return self._services[service_key]
 
-    def get_all_services(self, db: sqlite3.Connection = None) -> dict:
+    def get_all_services(self, db: Optional[sqlite3.Connection] = None) -> dict:
         """
         获取所有应用服务实例
 

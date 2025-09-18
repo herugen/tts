@@ -18,7 +18,7 @@ TTS策略模式实现
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Type
 from app.models import oc8r
 from app.infra.indextts_client import IndexTtsClient
 from app.infra.repositories import VoiceRepository, UploadRepository
@@ -200,6 +200,8 @@ class ReferenceStrategy(TtsStrategy):
         # 获取音色音频数据
         prompt_audio = await self._get_voice_audio_data(request.voiceId)
         # 获取情感音频数据
+        if request.emotionAudioId is None:
+            raise ValueError("emotionAudioId is required for reference mode")
         emotion_audio = await self._get_emotion_audio_data(request.emotionAudioId)
 
         generation_args = request.generationArgs or oc8r.GenerationArgs()
@@ -247,6 +249,8 @@ class VectorStrategy(TtsStrategy):
 
         generation_args = request.generationArgs or oc8r.GenerationArgs()
         # 调用IndexTTS客户端，获取音频数据字节
+        if request.emotionFactors is None:
+            raise ValueError("emotionFactors is required for vector mode")
         audio_data = await self.client.synthesize_vector(
             text=request.text,
             prompt_audio=prompt_audio,
@@ -290,6 +294,8 @@ class TextStrategy(TtsStrategy):
 
         generation_args = request.generationArgs or oc8r.GenerationArgs()
         # 调用IndexTTS客户端，获取音频数据字节
+        if request.emotionText is None:
+            raise ValueError("emotionText is required for text mode")
         audio_data = await self.client.synthesize_text(
             text=request.text,
             prompt_audio=prompt_audio,
@@ -328,7 +334,7 @@ class TtsStrategyFactory:
         :param file_service: 文件处理服务
         :return: 策略实例
         """
-        strategies = {
+        strategies: Dict[oc8r.TtsMode, Type[TtsStrategy]] = {
             oc8r.TtsMode.speaker: SpeakerStrategy,
             oc8r.TtsMode.reference: ReferenceStrategy,
             oc8r.TtsMode.vector: VectorStrategy,

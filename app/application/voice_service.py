@@ -33,7 +33,7 @@ class VoiceApplicationService:
         self,
         voice_repo: VoiceRepository,
         storage: LocalFileStorage,
-        upload_repo: UploadRepository = None,
+        upload_repo: Optional[UploadRepository] = None,
     ):
         """
         初始化Voice应用服务

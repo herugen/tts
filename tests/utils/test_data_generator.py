@@ -17,7 +17,7 @@
 
 import uuid
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from unittest.mock import Mock
 from app.models import oc8r
 from app.application.tts_service import TtsApplicationService
@@ -63,7 +63,7 @@ class TestDataGenerator:
     def create_voice(
         name: str = "Test Voice",
         description: str = "Test voice description",
-        upload_id: str = None,
+        upload_id: Optional[str] = None,
     ) -> oc8r.Voice:
         """创建测试音色记录"""
         if upload_id is None:
@@ -82,7 +82,7 @@ class TestDataGenerator:
     def create_tts_job(
         text: str = "Hello world",
         mode: oc8r.TtsMode = oc8r.TtsMode.speaker,
-        voice_id: str = None,
+        voice_id: Optional[str] = None,
         status: oc8r.JobStatus = oc8r.JobStatus.queued,
     ) -> oc8r.TtsJob:
         """创建测试TTS任务"""
@@ -95,28 +95,44 @@ class TestDataGenerator:
             status=status,
             createdAt=datetime.now().isoformat(),
             updatedAt=datetime.now().isoformat(),
-            request=oc8r.CreateTtsJobRequest(text=text, mode=mode, voiceId=voice_id),
+            request=oc8r.CreateTtsJobRequest(
+                text=text,
+                mode=mode,
+                voiceId=voice_id,
+                emotionAudioId=None,
+                emotionWeight=None,
+                emotionFactors=None,
+                emotionRandom=None,
+                emotionText=None
+            ),
             result=None,
             error=None,
         )
 
     @staticmethod
     def create_speaker_mode_request(
-        text: str = "Hello world", voice_id: str = None
+        text: str = "Hello world", voice_id: Optional[str] = None
     ) -> oc8r.CreateTtsJobRequest:
         """创建speaker模式请求"""
         if voice_id is None:
             voice_id = str(uuid.uuid4())
 
         return oc8r.CreateTtsJobRequest(
-            text=text, mode=oc8r.TtsMode.speaker, voiceId=voice_id
+            text=text,
+            mode=oc8r.TtsMode.speaker,
+            voiceId=voice_id,
+            emotionAudioId=None,
+            emotionWeight=None,
+            emotionFactors=None,
+            emotionRandom=None,
+            emotionText=None
         )
 
     @staticmethod
     def create_reference_mode_request(
         text: str = "Hello world",
-        voice_id: str = None,
-        emotion_audio_id: str = None,
+        voice_id: Optional[str] = None,
+        emotion_audio_id: Optional[str] = None,
         emotion_weight: float = 0.8,
     ) -> oc8r.CreateTtsJobRequest:
         """创建reference模式请求"""
@@ -131,13 +147,16 @@ class TestDataGenerator:
             voiceId=voice_id,
             emotionAudioId=emotion_audio_id,
             emotionWeight=emotion_weight,
+            emotionFactors=None,
+            emotionRandom=None,
+            emotionText=None
         )
 
     @staticmethod
     def create_vector_mode_request(
         text: str = "Hello world",
-        voice_id: str = None,
-        emotion_factors: oc8r.EmotionFactors = None,
+        voice_id: Optional[str] = None,
+        emotion_factors: Optional[oc8r.EmotionFactors] = None,
     ) -> oc8r.CreateTtsJobRequest:
         """创建vector模式请求"""
         if voice_id is None:
@@ -159,12 +178,16 @@ class TestDataGenerator:
             mode=oc8r.TtsMode.vector,
             voiceId=voice_id,
             emotionFactors=emotion_factors,
+            emotionAudioId=None,
+            emotionWeight=None,
+            emotionRandom=None,
+            emotionText=None
         )
 
     @staticmethod
     def create_text_mode_request(
         text: str = "Hello world",
-        voice_id: str = None,
+        voice_id: Optional[str] = None,
         emotion_text: str = "happy and excited",
     ) -> oc8r.CreateTtsJobRequest:
         """创建text模式请求"""
@@ -176,6 +199,10 @@ class TestDataGenerator:
             mode=oc8r.TtsMode.text,
             voiceId=voice_id,
             emotionText=emotion_text,
+            emotionAudioId=None,
+            emotionWeight=None,
+            emotionFactors=None,
+            emotionRandom=None
         )
 
     @staticmethod
@@ -235,9 +262,9 @@ class TestDataGenerator:
 
     @staticmethod
     def create_tts_application_service(
-        job_repo: TtsJobRepository = None,
-        voice_repo: VoiceRepository = None,
-        queue_manager: QueueManager = None,
+        job_repo: Optional[TtsJobRepository] = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        queue_manager: Optional[QueueManager] = None,
     ) -> TtsApplicationService:
         """创建TTS应用服务实例"""
         if job_repo is None:
@@ -251,9 +278,9 @@ class TestDataGenerator:
 
     @staticmethod
     def create_voice_application_service(
-        voice_repo: VoiceRepository = None,
-        storage: LocalFileStorage = None,
-        upload_repo: UploadRepository = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        upload_repo: Optional[UploadRepository] = None,
     ) -> VoiceApplicationService:
         """创建Voice应用服务实例"""
         if voice_repo is None:
@@ -267,7 +294,7 @@ class TestDataGenerator:
 
     @staticmethod
     def create_upload_application_service(
-        storage: LocalFileStorage = None,
+        storage: Optional[LocalFileStorage] = None,
     ) -> UploadApplicationService:
         """创建Upload应用服务实例"""
         if storage is None:
@@ -277,7 +304,7 @@ class TestDataGenerator:
 
     @staticmethod
     def create_queue_application_service(
-        queue_manager: QueueManager = None,
+        queue_manager: Optional[QueueManager] = None,
     ) -> QueueApplicationService:
         """创建Queue应用服务实例"""
         if queue_manager is None:
@@ -287,17 +314,17 @@ class TestDataGenerator:
 
     @staticmethod
     def create_audio_application_service(
-        storage: LocalFileStorage = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> AudioApplicationService:
         """创建Audio应用服务实例"""
-        if storage is None:
-            storage = Mock(spec=LocalFileStorage)
+        if file_service is None:
+            file_service = Mock(spec=FileApplicationService)
 
-        return AudioApplicationService(storage)
+        return AudioApplicationService(file_service)
 
     @staticmethod
     def create_file_application_service(
-        storage: LocalFileStorage = None,
+        storage: Optional[LocalFileStorage] = None,
     ) -> FileApplicationService:
         """创建File应用服务实例"""
         if storage is None:
@@ -307,11 +334,11 @@ class TestDataGenerator:
 
     @staticmethod
     def create_tts_task_processor(
-        voice_repo: VoiceRepository = None,
-        upload_repo: UploadRepository = None,
-        storage: LocalFileStorage = None,
-        client: IndexTtsClient = None,
-        file_service: FileApplicationService = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        upload_repo: Optional[UploadRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        client: Optional[IndexTtsClient] = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> TtsTaskProcessor:
         """创建TTS任务处理器实例"""
         if voice_repo is None:
@@ -331,11 +358,11 @@ class TestDataGenerator:
 
     @staticmethod
     def create_speaker_strategy(
-        client: IndexTtsClient = None,
-        voice_repo: VoiceRepository = None,
-        upload_repo: UploadRepository = None,
-        storage: LocalFileStorage = None,
-        file_service: FileApplicationService = None,
+        client: Optional[IndexTtsClient] = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        upload_repo: Optional[UploadRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> SpeakerStrategy:
         """创建Speaker策略实例"""
         if client is None:
@@ -353,11 +380,11 @@ class TestDataGenerator:
 
     @staticmethod
     def create_reference_strategy(
-        client: IndexTtsClient = None,
-        voice_repo: VoiceRepository = None,
-        upload_repo: UploadRepository = None,
-        storage: LocalFileStorage = None,
-        file_service: FileApplicationService = None,
+        client: Optional[IndexTtsClient] = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        upload_repo: Optional[UploadRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> ReferenceStrategy:
         """创建Reference策略实例"""
         if client is None:
@@ -375,11 +402,11 @@ class TestDataGenerator:
 
     @staticmethod
     def create_vector_strategy(
-        client: IndexTtsClient = None,
-        voice_repo: VoiceRepository = None,
-        upload_repo: UploadRepository = None,
-        storage: LocalFileStorage = None,
-        file_service: FileApplicationService = None,
+        client: Optional[IndexTtsClient] = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        upload_repo: Optional[UploadRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> VectorStrategy:
         """创建Vector策略实例"""
         if client is None:
@@ -397,11 +424,11 @@ class TestDataGenerator:
 
     @staticmethod
     def create_text_strategy(
-        client: IndexTtsClient = None,
-        voice_repo: VoiceRepository = None,
-        upload_repo: UploadRepository = None,
-        storage: LocalFileStorage = None,
-        file_service: FileApplicationService = None,
+        client: Optional[IndexTtsClient] = None,
+        voice_repo: Optional[VoiceRepository] = None,
+        upload_repo: Optional[UploadRepository] = None,
+        storage: Optional[LocalFileStorage] = None,
+        file_service: Optional[FileApplicationService] = None,
     ) -> TextStrategy:
         """创建Text策略实例"""
         if client is None:
@@ -420,7 +447,9 @@ class TestDataGenerator:
     # ==================== 模拟数据设置方法 ====================
 
     @staticmethod
-    def setup_mock_voice_repo(voice_repo: Mock, voices: List[oc8r.Voice] = None):
+    def setup_mock_voice_repo(
+        voice_repo: Mock, voices: Optional[List[oc8r.Voice]] = None
+    ):
         """设置模拟Voice仓储的行为"""
         if voices is None:
             voices = [TestDataGenerator.create_voice()]
@@ -431,7 +460,9 @@ class TestDataGenerator:
         voice_repo.delete.return_value = None
 
     @staticmethod
-    def setup_mock_upload_repo(upload_repo: Mock, uploads: List[oc8r.Upload] = None):
+    def setup_mock_upload_repo(
+        upload_repo: Mock, uploads: Optional[List[oc8r.Upload]] = None
+    ):
         """设置模拟Upload仓储的行为"""
         if uploads is None:
             uploads = [TestDataGenerator.create_upload()]
@@ -442,7 +473,10 @@ class TestDataGenerator:
         upload_repo.delete.return_value = None
 
     @staticmethod
-    def setup_mock_tts_job_repo(job_repo: Mock, jobs: List[oc8r.TtsJob] = None):
+    def setup_mock_tts_job_repo(
+        job_repo: Mock,
+        jobs: Optional[List[oc8r.TtsJob]] = None
+    ):
         """设置模拟TtsJob仓储的行为"""
         if jobs is None:
             jobs = [TestDataGenerator.create_tts_job()]
@@ -455,7 +489,9 @@ class TestDataGenerator:
 
     @staticmethod
     def setup_mock_storage(
-        storage: Mock, file_exists: bool = True, file_path: str = None
+        storage: Mock,
+        file_exists: bool = True,
+        file_path: Optional[str] = None
     ):
         """设置模拟存储服务的行为"""
         if file_path is None:
@@ -471,7 +507,9 @@ class TestDataGenerator:
         storage.delete_file.return_value = None
 
     @staticmethod
-    def setup_mock_queue_manager(queue_manager: Mock, job_id: str = None):
+    def setup_mock_queue_manager(
+        queue_manager: Mock, job_id: Optional[str] = None
+    ):
         """设置模拟队列管理器的行为"""
         if job_id is None:
             job_id = str(uuid.uuid4())
@@ -482,7 +520,7 @@ class TestDataGenerator:
         queue_manager.queue_length.return_value = 0
 
     @staticmethod
-    def setup_mock_indextts_client(client: Mock, audio_data: bytes = None):
+    def setup_mock_indextts_client(client: Mock, audio_data: Optional[bytes] = None):
         """设置模拟IndexTTS客户端的行为"""
         if audio_data is None:
             audio_data = b"mock_audio_data"
@@ -493,7 +531,9 @@ class TestDataGenerator:
         client.synthesize_text.return_value = audio_data
 
     @staticmethod
-    def setup_mock_file_service(file_service: Mock, result: Dict[str, Any] = None):
+    def setup_mock_file_service(
+        file_service: Mock, result: Optional[Dict[str, Any]] = None
+    ):
         """设置模拟文件服务的行为"""
         if result is None:
             result = {

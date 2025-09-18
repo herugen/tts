@@ -31,7 +31,7 @@ class IndexTtsClient:
     负责与底层IndexTTS服务进行通信，提供统一的TTS合成接口
     """
 
-    def __init__(self, base_url: str = None):
+    def __init__(self, base_url: Optional[str] = None):
         """
         初始化IndexTTS客户端
         :param base_url: IndexTTS服务的基础URL，如果为None则使用配置文件中的默认值

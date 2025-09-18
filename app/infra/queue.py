@@ -38,7 +38,7 @@ class QueueManager:
         """
         self.queue = asyncio.Queue()
         self.status_map: Dict[str, Dict[str, Any]] = {}
-        self.status_callback: Optional[Callable] = None
+        self.status_callback: Optional[Callable[..., Any]] = None
         self.current_task_id: Optional[str] = None
 
     def set_callback(self, status_callback: Callable):
@@ -186,7 +186,7 @@ async def _default_task_handler(_payload: Any) -> Any:
     return {"ok": True, "message": "Default handler processed task"}
 
 
-async def start_queue(task_handler: Callable = None) -> None:
+async def start_queue(task_handler: Optional[Callable[..., Any]] = None) -> None:
     """
     启动队列
 

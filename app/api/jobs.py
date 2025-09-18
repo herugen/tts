@@ -19,6 +19,7 @@
 
 from fastapi import APIRouter, status, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from typing import Optional
 from app.models import oc8r
 from app.dependencies import get_tts_service
 from app.application.tts_service import TtsApplicationService
@@ -88,7 +89,7 @@ async def get_tts_job(
     status_code=status.HTTP_200_OK,
 )
 async def list_tts_jobs(
-    job_status: str = None,
+    job_status: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
     tts_service: TtsApplicationService = Depends(get_tts_service),
