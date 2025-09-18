@@ -1,0 +1,76 @@
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试文件
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+.tmp/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# Git文件
+.git/
+.gitignore
+
+# Docker文件
+Dockerfile
+.dockerignore
+
+# 文档文件
+README.md
+*.md
+
+# 测试数据（保留必要的测试文件）
+tests/
+test_*
+
+# 开发工具配置
+Makefile
+pytest.ini
+
+# 数据文件（运行时生成）
+data/*
