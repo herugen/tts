@@ -1,0 +1,817 @@
+openapi: 3.0.3
+info:
+  title: TTS Orchestrator API
+  version: 0.1.0
+  description: |
+    面向外部的异步文生语音与音色管理接口，基于内部的 IndexTTS HTTP Service 做编排与队列管理。
+    - 支持异步文字转语音（TTS）任务
+    - 支持音频文件上传、音色克隆、音色删除、音色列表与预览
+    - 暴露队列状态与健康检查
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: TTS Jobs
+    description: 异步文生语音任务
+  - name: Voices
+    description: 音色管理
+  - name: Uploads
+    description: 音频文件上传
+  - name: Queue
+    description: 队列状态
+  - name: Audio
+    description: 音频文件服务
+  - name: Health
+    description: 健康检查
+
+paths:
+  /tts/jobs:
+    post:
+      tags: [TTS Jobs]
+      summary: 创建异步TTS任务
+      description: |
+        创建一个基于指定控制方式（克隆音色、参考音频情感、情感向量、情感文本）的异步TTS任务。
+        注意：内部将调用 IndexTTS 服务，若后端繁忙会进入排队。
+      operationId: createTtsJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTtsJobRequest'
+            examples:
+              speakerVoice:
+                value:
+                  mode: speaker
+                  text: "欢迎使用我们的服务"
+                  voiceId: "v_123"
+                  generationArgs:
+                    doSample: true
+      responses:
+        '202':
+          description: 已入队
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsJobResponse'
+        '400':
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: 负载过大（文本或内嵌音频过大）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: 服务繁忙/限流（队列长度限制）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [TTS Jobs]
+      summary: 列举TTS任务
+      operationId: listTtsJobs
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/JobStatus'
+          description: 过滤任务状态
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsJobListResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tts/jobs/{jobId}:
+    get:
+      tags: [TTS Jobs]
+      summary: 查询TTS任务状态
+      operationId: getTtsJob
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 任务详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsJobResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 未找到任务
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tts/jobs/{jobId}/cancel:
+    post:
+      tags: [TTS Jobs]
+      summary: 取消TTS任务
+      operationId: cancelTtsJob
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 已取消
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsJobResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 未找到任务
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tts/jobs/{jobId}/retry:
+    post:
+      tags: [TTS Jobs]
+      summary: 重试TTS任务
+      operationId: retryTtsJob
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 已重试
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TtsJobResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 未找到任务
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /uploads:
+    post:
+      tags: [Uploads]
+      summary: 上传参考音频文件
+      description: |
+        仅支持 WAV/MP3/M4A 等常见格式，最大 20MB（示例限制，实际以服务配置为准）。
+      operationId: uploadAudio
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadAudioRequest'
+      responses:
+        '201':
+          description: 已上传
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: 参数或文件不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: 文件过大
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: 服务繁忙/限流（文件上传限制）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /voices:
+    post:
+      tags: [Voices]
+      summary: 基于已上传音频创建克隆音色
+      operationId: createVoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVoiceRequest'
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '400':
+          description: 参数错误或上传记录无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 业务冲突（重复名称等）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Voices]
+      summary: 列举我的音色
+      operationId: listVoices
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceListResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /voices/{voiceId}:
+    get:
+      tags: [Voices]
+      summary: 获取音色详情
+      operationId: getVoice
+      parameters:
+        - in: path
+          name: voiceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 未找到音色
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Voices]
+      summary: 删除音色（及关联上传文件）
+      operationId: deleteVoice
+      parameters:
+        - in: path
+          name: voiceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 已删除（无响应体）
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 未找到音色
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /queue/status:
+    get:
+      tags: [Queue]
+      summary: 队列状态
+      operationId: getQueueStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStatusResponse'
+
+  /audio/{filename}:
+    get:
+      tags: [Audio]
+      summary: 获取音频文件
+      description: |
+        提供对生成的音频文件的直接访问。
+        支持WAV格式音频文件的流式传输。
+      operationId: getAudioFile
+      parameters:
+        - in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          description: 音频文件名
+      responses:
+        '200':
+          description: 音频文件
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: 不支持的音频格式
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 音频文件未找到
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      tags: [Health]
+      summary: 健康检查
+      operationId: health
+      responses:
+        '200': 
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # 统一错误响应
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 错误码
+        message:
+          type: string
+          description: 错误信息
+      required: [code, message]
+
+    PendingResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 202
+        message:
+          type: string
+          example: "Preview is generating"
+      required: [code, message]
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required: [page, pageSize, total]
+
+    JobStatus:
+      type: string
+      enum: [queued, running, succeeded, failed, cancelled]
+
+    TtsMode:
+      type: string
+      enum: [speaker, reference, vector, text]
+      description: |
+        - speaker: 使用音色克隆（voiceId）
+        - reference: 使用 emotionAudio 控制情感
+        - vector: 使用 emotionFactors 控制情感
+        - text: 使用 emotionText 控制情感
+
+    GenerationArgs:
+      type: object
+      properties:
+        doSample:
+          type: boolean
+          default: true
+        topP:
+          type: number
+          format: float
+          default: 0.8
+        topK:
+          type: integer
+          default: 30
+        temperature:
+          type: number
+          format: float
+          default: 0.8
+        lengthPenalty:
+          type: number
+          format: float
+          default: 0.0
+        numBeams:
+          type: integer
+          default: 3
+        repetitionPenalty:
+          type: number
+          format: float
+          default: 10.0
+        maxMelTokens:
+          type: integer
+          default: 1500
+
+    EmotionFactors:
+      type: object
+      properties:
+        happy: { type: number, format: float }
+        angry: { type: number, format: float }
+        sad: { type: number, format: float }
+        afraid: { type: number, format: float }
+        disgusted: { type: number, format: float }
+        melancholic: { type: number, format: float }
+        surprised: { type: number, format: float }
+        calm: { type: number, format: float }
+      required: [happy, angry, sad, afraid, disgusted, melancholic, surprised, calm]
+
+    # 请求/响应模型
+    CreateTtsJobRequest:
+      type: object
+      description: |
+        创建TTS任务的通用请求：
+        - 必填：text, mode, voiceId
+        - mode=speaker：无额外参数
+        - mode=reference：需提供 emotionAudioId，可选 emotionWeight
+        - mode=vector：需提供 emotionFactors，可选 emotionRandom
+        - mode=text：需提供 emotionText
+      properties:
+        text:
+          type: string
+        mode:
+          $ref: '#/components/schemas/TtsMode'
+        voiceId:
+          type: string
+          description: 既有克隆音色ID
+        emotionAudioId:
+          type: string
+          description: 提前上传的参考情感音频Upload ID
+        emotionWeight:
+          type: number
+          format: float
+          default: 0.8
+          description: 情感参考强度
+        emotionFactors:
+          $ref: '#/components/schemas/EmotionFactors'
+          description: 情感因子
+        emotionRandom:
+          type: boolean
+          default: false
+          description: 情感随机采样
+        emotionText:
+          type: string
+          description: 情感描述文本
+        maxTextTokensPerSegment:
+          type: integer
+          default: 120
+        generationArgs:
+          $ref: '#/components/schemas/GenerationArgs'
+        outputFormat:
+          type: string
+          enum: [wav]
+          default: wav
+      required: [text, mode, voiceId]
+
+    TtsJob:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [tts]
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        queuedPosition:
+          type: integer
+          nullable: true
+        etaSeconds:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          description: 创建时间,ISO 格式字符串
+          example: 2021-01-01T00:00:00Z
+        updatedAt:
+          type: string
+          description: 更新时间,ISO 格式字符串
+          example: 2021-01-01T00:00:00Z
+        request:
+          $ref: '#/components/schemas/CreateTtsJobRequest'
+        result:
+          type: object
+          nullable: true
+          properties:
+            audioUrl:
+              type: string
+              format: uri
+            durationSeconds:
+              type: number
+              format: float
+            format:
+              type: string
+              enum: [wav]
+        error:
+          $ref: '#/components/schemas/ErrorResponse'
+      required: [id, type, status, createdAt, updatedAt]
+
+    TtsJobResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        job:
+          $ref: '#/components/schemas/TtsJob'
+      required: [job]
+
+    TtsJobListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/TtsJob'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required: [jobs]
+
+    UploadAudioRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        filename:
+          type: string
+          description: 客户端建议的文件名
+      required: [file]
+
+    Upload:
+      type: object
+      properties:
+        id: { type: string }
+        fileName: { type: string }
+        contentType: { type: string }
+        sizeBytes: { type: integer }
+        durationSeconds:
+          type: number
+          format: float
+          nullable: true
+        createdAt:
+          type: string
+          description: 创建时间,ISO 格式字符串
+          example: 2021-01-01T00:00:00Z
+      required: [id, fileName, contentType, sizeBytes, createdAt]
+
+    UploadResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        upload:
+          $ref: '#/components/schemas/Upload'
+      required: [upload]
+
+    CreateVoiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 音色显示名称，需在用户空间内唯一
+        description:
+          type: string
+          nullable: true
+        uploadId:
+          type: string
+          description: 关联的上传音频ID
+      required: [name, uploadId]
+
+    Voice:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description:
+          type: string
+          nullable: true
+        uploadId: { type: string }
+        createdAt:
+          type: string
+          description: 更新时间,ISO 格式字符串
+          example: 2021-01-01T00:00:00Z
+        updatedAt:
+          type: string
+          description: 更新时间,ISO 格式字符串
+          example: 2021-01-01T00:00:00Z
+      required: [id, name, uploadId, createdAt, updatedAt]
+
+    VoiceResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        voice:
+          $ref: '#/components/schemas/Voice'
+      required: [voice]
+
+    VoiceListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        voices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Voice'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      required: [voices]
+
+    QueueStatus:
+      type: object
+      properties:
+        maxConcurrency:
+          type: integer
+          example: 1
+        runningJobId:
+          type: string
+          nullable: true
+        queueLength:
+          type: integer
+          example: 5
+        averageWaitSeconds:
+          type: integer
+          example: 30
+      required: [maxConcurrency, queueLength]
+
+    QueueStatusResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK
+        status:
+          $ref: '#/components/schemas/QueueStatus'
+      required: [code, message, status]
+
+    HealthResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OK

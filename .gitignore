@@ -1,0 +1,45 @@
+# Python cache and test result files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pytest_cache/
+.cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+
+# Test output and temp files
+*.testoutput
+*.testresult
+*.out
+*.err
+*.tmp
+*.temp
+*.log
+*.sqlite3
+*.db
+*.db-journal
+
+# Mac OS DS_Store
+.DS_Store
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+# End Generation Here
+
+# data
+data/
