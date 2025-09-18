@@ -1,4 +1,10 @@
-.PHONY: gen run test install-deps clean help
+.PHONY: venv gen run test install-deps clean help
+
+venv:
+	@echo "🚀 创建venv..."
+	python -m venv venv
+	@echo "✅ 虚拟环境创建完成"
+	@echo "请手动激活虚拟环境: source venv/bin/activate"
 
 # 生成模型文件
 gen:
@@ -28,13 +34,14 @@ run:
 	@echo "🚀 启动应用..."
 	uvicorn app.main:app --reload
 
+
 # 安装测试依赖
 install-deps:
-	@echo "📦 安装测试依赖..."
-	pip install pytest pytest-cov pytest-json-report httpx fastapi
+	@echo "📦 安装依赖..."
+	pip install -r requirements.txt
 
 # 所有测试
-test: install-deps
+test:
 	@echo "🧪 运行所有测试..."
 	python tests/scripts/run_tests.py
 
@@ -42,6 +49,7 @@ test: install-deps
 clean:
 	@echo "🧹 清理测试文件..."
 	rm -rf __pycache__/
+	rm -rf .pytest_cache/
 	rm -rf tests/__pycache__/
 	rm -rf tests/unit/__pycache__/
 	rm -rf tests/integration/__pycache__/
@@ -53,6 +61,7 @@ clean:
 	rm -rf app/models/__pycache__/
 	rm -rf app/domain/__pycache__/
 	rm -rf app/domain/strategies/__pycache__/
+	rm -rf data
 	@echo "✅ 清理完成"
 
 # 显示帮助信息
@@ -60,10 +69,16 @@ help:
 	@echo ""
 	@echo "可用命令:"
 	@echo ""
-	@echo "其他命令:"
-	@echo "  make install-deps      - 安装测试依赖"
-	@echo "  make clean             - 清理测试文件"
+	@echo "  make venv              - 创建虚拟环境"
+	@echo "  make install-deps      - 安装依赖"
 	@echo "  make gen               - 生成模型文件"
 	@echo "  make run               - 运行应用"
 	@echo "  make test              - 运行所有测试"
+	@echo "  make clean             - 清理测试文件"
 	@echo "  make help              - 显示帮助信息"
+	@echo ""
+	@echo "使用说明:"
+	@echo "  1. 首次使用: make venv && make install-deps"
+	@echo "  2. 生成模型: make gen"
+	@echo "  3. 运行应用: make run"
+	@echo "  4. 运行测试: make test"

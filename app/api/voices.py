@@ -114,7 +114,7 @@ async def get_voice(
     "/voices/{voice_id}",
     summary="删除 Voice",
     tags=["Voices"],
-    response_model=oc8r.VoiceResponse
+    status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_voice(
     voice_id: str,
@@ -130,12 +130,8 @@ async def delete_voice(
         if not success:
             raise HTTPException(status_code=404, detail="Voice not found")
         
-        resp = oc8r.VoiceResponse(
-            code=200,
-            message="Voice and associated files deleted successfully",
-            voice=None
-        )
-        return resp
+        # 删除成功，返回204状态码（无响应体）
+        return None
         
     except HTTPException as e:
         raise e

@@ -161,10 +161,8 @@ class TestVoiceEndpoint:
         
         response = test_client.delete(f"/api/v1/voices/{sample_voice.id}")
         
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
-        assert "message" in data
-        assert data["voice"] is None  # 删除后voice字段为None
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        # 删除成功，无响应体
         
         # 验证音色已被删除
         get_response = test_client.get(f"/api/v1/voices/{sample_voice.id}")

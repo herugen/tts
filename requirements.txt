@@ -1,0 +1,40 @@
+# TTS项目依赖包
+# 核心框架
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# HTTP客户端
+httpx>=0.25.0
+
+# 数据模型和验证
+pydantic>=2.5.0
+
+# 数据库
+# SQLite是Python标准库，无需额外安装
+
+# 测试框架
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-json-report>=1.5.0
+
+# 代码生成工具
+datamodel-code-generator>=0.25.0
+
+# 文件处理
+# 标准库os, shutil, uuid, base64等无需额外安装
+
+# 异步处理
+# asyncio是Python标准库
+
+# 日志
+# logging是Python标准库
+
+# 类型提示
+typing-extensions>=4.8.0
+
+# 开发工具
+# 可选：用于代码格式化和检查
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.7.0

@@ -50,7 +50,7 @@ class TestIntegration:
         
         # 5. 删除音色
         response = test_client.delete(f"/api/v1/voices/{voice_id}")
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_204_NO_CONTENT
         
         # 6. 验证音色已删除
         response = test_client.get(f"/api/v1/voices/{voice_id}")

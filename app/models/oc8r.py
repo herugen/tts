@@ -166,7 +166,7 @@ class Voice(BaseModel):
 class VoiceResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
     message: Optional[str] = Field(None, examples=['OK'])
-    voice: Optional[Voice] = None
+    voice: Voice
 
 
 class VoiceListResponse(BaseModel):
