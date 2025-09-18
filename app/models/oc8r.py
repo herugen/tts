@@ -70,7 +70,9 @@ class CreateTtsJobRequest(BaseModel):
     text: str
     mode: TtsMode
     voiceId: str = Field(..., description='既有克隆音色ID')
-    emotionAudioId: Optional[str] = Field(None, description='提前上传的参考情感音频Upload ID')
+    emotionAudioId: Optional[str] = Field(
+        None, description='提前上传的参考情感音频Upload ID'
+    )
     emotionWeight: Optional[float] = Field(0.8, description='情感参考强度')
     emotionFactors: Optional[EmotionFactors] = Field(None, description='情感因子')
     emotionRandom: Optional[bool] = Field(False, description='情感随机采样')
@@ -164,7 +166,7 @@ class Voice(BaseModel):
 class VoiceResponse(BaseModel):
     code: Optional[int] = Field(None, examples=[200])
     message: Optional[str] = Field(None, examples=['OK'])
-    voice: Voice
+    voice: Optional[Voice] = None
 
 
 class VoiceListResponse(BaseModel):

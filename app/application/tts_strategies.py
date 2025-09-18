@@ -1,7 +1,8 @@
 """
-文件级注释：
-本模块实现TTS策略模式，为四种不同的TTS模式提供统一的策略接口。
-遵循策略模式设计，每种TTS模式都有对应的策略实现类，负责参数验证和请求构建。
+TTS策略模式实现
+
+将TTS策略从领域层移动到应用层，作为应用服务的一部分。
+策略模式负责不同TTS模式的参数验证和请求构建，属于应用层的技术实现细节。
 
 架构说明：
 - TtsStrategy抽象基类定义策略接口
@@ -12,6 +13,8 @@
 依赖说明：
 - 依赖app.models.oc8r中的请求模型
 - 依赖app.infra.indextts_client.IndexTtsClient
+- 依赖app.infra.repositories中的仓储
+- 依赖app.infra.storage中的存储服务
 """
 
 from abc import ABC, abstractmethod
@@ -20,6 +23,7 @@ from app.models import oc8r
 from app.infra.indextts_client import IndexTtsClient
 from app.infra.repositories import VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
+from app.application.file_service import FileApplicationService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,18 +34,20 @@ class TtsStrategy(ABC):
     定义所有TTS策略的通用接口
     """
     
-    def __init__(self, client: IndexTtsClient, voice_repo: VoiceRepository, upload_repo: UploadRepository, storage: LocalFileStorage):
+    def __init__(self, client: IndexTtsClient, voice_repo: VoiceRepository, upload_repo: UploadRepository, storage: LocalFileStorage, file_service: FileApplicationService):
         """
         初始化策略
         :param client: IndexTTS客户端实例
         :param voice_repo: Voice仓库实例
         :param upload_repo: Upload仓库实例
         :param storage: 文件存储实例
+        :param file_service: 文件处理服务实例
         """
         self.client = client
         self.voice_repo = voice_repo
         self.upload_repo = upload_repo
         self.storage = storage
+        self.file_service = file_service
     
     @abstractmethod
     async def validate_request(self, request: oc8r.CreateTtsJobRequest) -> None:
@@ -50,7 +56,7 @@ class TtsStrategy(ABC):
         :param request: TTS任务请求
         :raises ValueError: 参数验证失败
         """
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     async def synthesize(self, request: oc8r.CreateTtsJobRequest) -> Dict[str, Any]:
@@ -59,7 +65,7 @@ class TtsStrategy(ABC):
         :param request: TTS任务请求
         :return: 合成结果
         """
-        pass
+        raise NotImplementedError
     
     async def _get_voice_audio_data(self, voice_id: str) -> bytes:
         """
@@ -141,11 +147,16 @@ class SpeakerStrategy(TtsStrategy):
         prompt_audio = await self._get_voice_audio_data(request.voiceId)
         
         generation_args = request.generationArgs or oc8r.GenerationArgs()
-        return await self.client.synthesize_speaker(
+        # 调用IndexTTS客户端，获取音频数据字节
+        audio_data = await self.client.synthesize_speaker(
             text=request.text,
             prompt_audio=prompt_audio,
             generation_args=generation_args
         )
+        
+        # 使用文件处理服务保存音频文件
+        result = await self.file_service.save_audio_result(audio_data)
+        return result
 
 class ReferenceStrategy(TtsStrategy):
     """
@@ -178,13 +189,18 @@ class ReferenceStrategy(TtsStrategy):
         emotion_audio = await self._get_emotion_audio_data(request.emotionAudioId)
         
         generation_args = request.generationArgs or oc8r.GenerationArgs()
-        return await self.client.synthesize_reference(
+        # 调用IndexTTS客户端，获取音频数据字节
+        audio_data = await self.client.synthesize_reference(
             text=request.text,
             prompt_audio=prompt_audio,
             emotion_audio=emotion_audio,
             emotion_weight=request.emotionWeight or 0.8,
             generation_args=generation_args
         )
+        
+        # 使用文件处理服务保存音频文件
+        result = await self.file_service.save_audio_result(audio_data)
+        return result
 
 class VectorStrategy(TtsStrategy):
     """
@@ -215,13 +231,18 @@ class VectorStrategy(TtsStrategy):
         prompt_audio = await self._get_voice_audio_data(request.voiceId)
         
         generation_args = request.generationArgs or oc8r.GenerationArgs()
-        return await self.client.synthesize_vector(
+        # 调用IndexTTS客户端，获取音频数据字节
+        audio_data = await self.client.synthesize_vector(
             text=request.text,
             prompt_audio=prompt_audio,
             emotion_factors=request.emotionFactors,
             emotion_random=request.emotionRandom or False,
             generation_args=generation_args
         )
+        
+        # 使用文件处理服务保存音频文件
+        result = await self.file_service.save_audio_result(audio_data)
+        return result
 
 class TextStrategy(TtsStrategy):
     """
@@ -252,13 +273,18 @@ class TextStrategy(TtsStrategy):
         prompt_audio = await self._get_voice_audio_data(request.voiceId)
         
         generation_args = request.generationArgs or oc8r.GenerationArgs()
-        return await self.client.synthesize_text(
+        # 调用IndexTTS客户端，获取音频数据字节
+        audio_data = await self.client.synthesize_text(
             text=request.text,
             prompt_audio=prompt_audio,
             emotion_text=request.emotionText,
             emotion_random=request.emotionRandom or False,
             generation_args=generation_args
         )
+        
+        # 使用文件处理服务保存音频文件
+        result = await self.file_service.save_audio_result(audio_data)
+        return result
 
 class TtsStrategyFactory:
     """
@@ -267,7 +293,7 @@ class TtsStrategyFactory:
     """
     
     @staticmethod
-    def create_strategy(mode: oc8r.TtsMode, client: IndexTtsClient, voice_repo: VoiceRepository, upload_repo: UploadRepository, storage: LocalFileStorage) -> TtsStrategy:
+    def create_strategy(mode: oc8r.TtsMode, client: IndexTtsClient, voice_repo: VoiceRepository, upload_repo: UploadRepository, storage: LocalFileStorage, file_service: FileApplicationService) -> TtsStrategy:
         """
         根据TTS模式创建策略实例
         :param mode: TTS模式
@@ -275,6 +301,7 @@ class TtsStrategyFactory:
         :param voice_repo: Voice仓库
         :param upload_repo: Upload仓库
         :param storage: 文件存储
+        :param file_service: 文件处理服务
         :return: 策略实例
         """
         strategies = {
@@ -288,4 +315,4 @@ class TtsStrategyFactory:
         if not strategy_class:
             raise ValueError(f"Unsupported TTS mode: {mode}")
         
-        return strategy_class(client, voice_repo, upload_repo, storage)
+        return strategy_class(client, voice_repo, upload_repo, storage, file_service)

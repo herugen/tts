@@ -19,38 +19,11 @@
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from fastapi.responses import JSONResponse
-from app.infra.repositories import VoiceRepository, UploadRepository
 from app.models import oc8r
-from app.db_conn import get_db_conn
-from datetime import datetime
-import uuid
-import sqlite3
-import logging
-logger = logging.getLogger(__name__)
+from app.dependencies import get_voice_service
+from app.application.voice_service import VoiceApplicationService
 
 router = APIRouter()
-
-def check_upload_exists(upload_repo, upload_id: str):
-    """
-    校验 uploadId 是否存在
-    """
-    if not upload_repo.get(upload_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="uploadId does not exist"
-        )
-
-def check_voice_name_unique(voice_repo, name: str):
-    """
-    校验 Voice 名称是否唯一
-    """
-    voices = voice_repo.list(limit=10000, offset=0)
-    for v in voices:
-        if v.name == name:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Voice name already exists"
-            )
 
 @router.post(
     "/voices",
@@ -61,36 +34,30 @@ def check_voice_name_unique(voice_repo, name: str):
 )
 async def create_voice(
     body: oc8r.CreateVoiceRequest,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
     创建 Voice
-    - 校验 uploadId 是否存在
-    - 校验名称唯一
-    - 创建 Voice 并返回
+    - 委托给Voice应用服务处理业务逻辑
     """
-    voice_repo = VoiceRepository(db)
-    upload_repo = UploadRepository(db)
-    check_upload_exists(upload_repo, body.uploadId)
-    check_voice_name_unique(voice_repo, body.name)
-
-    now = datetime.now().isoformat()
-    voice_id = str(uuid.uuid4())
-    voice = oc8r.Voice(
-        id=voice_id,
-        name=body.name,
-        description=body.description,
-        uploadId=body.uploadId,
-        createdAt=now,
-        updatedAt=now
-    )
-    voice_repo.add(voice)
-    resp = oc8r.VoiceResponse(
-        code=201,
-        message="Voice created",
-        voice=voice
-    )
-    return JSONResponse(status_code=201, content=resp.model_dump())
+    try:
+        # 委托给Voice应用服务创建音色
+        voice = await voice_service.create_voice(body)
+        
+        # 构建响应
+        resp = oc8r.VoiceResponse(
+            code=201,
+            message="Voice created",
+            voice=voice
+        )
+        return JSONResponse(status_code=201, content=resp.model_dump())
+        
+    except ValueError as e:
+        # 业务逻辑错误，如音色名称重复或uploadId不存在
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get(
     "/voices",
@@ -99,15 +66,17 @@ async def create_voice(
     response_model=oc8r.VoiceListResponse
 )
 async def list_voices(
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(100, ge=0),
     offset: int = Query(0, ge=0),
-    db: sqlite3.Connection = Depends(get_db_conn)
+    voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
-    分页查询 Voice（占位实现）
+    分页查询 Voice
+    - 委托给Voice应用服务处理业务逻辑
     """
-    voice_repo = VoiceRepository(db)
-    voices = voice_repo.list(limit=limit, offset=offset)
+    # 委托给Voice应用服务获取音色列表
+    voices = await voice_service.list_voices(offset=offset, limit=limit)
+    
     resp = oc8r.VoiceListResponse(
         code=200,
         message="Success",
@@ -123,15 +92,17 @@ async def list_voices(
 )
 async def get_voice(
     voice_id: str,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
     查询单个 Voice
+    - 委托给Voice应用服务处理业务逻辑
     """
-    voice_repo = VoiceRepository(db)
-    voice = voice_repo.get(voice_id)
+    # 委托给Voice应用服务获取音色
+    voice = await voice_service.get_voice(voice_id)
     if not voice:
         raise HTTPException(status_code=404, detail="Voice not found")
+    
     resp = oc8r.VoiceResponse(
         code=200,
         message="Success",
@@ -147,52 +118,31 @@ async def get_voice(
 )
 async def delete_voice(
     voice_id: str,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    voice_service: VoiceApplicationService = Depends(get_voice_service)
 ):
     """
     删除 Voice 及其关联的 Upload 记录和文件
-    - 删除 Voice 记录
-    - 删除关联的 Upload 记录
-    - 删除关联的音频文件
+    - 委托给Voice应用服务处理业务逻辑
     """
-    from app.infra.storage import LocalFileStorage
-    
-    voice_repo = VoiceRepository(db)
-    upload_repo = UploadRepository(db)
-    storage = LocalFileStorage()
-    
-    # 获取Voice记录
-    voice = voice_repo.get(voice_id)
-    if not voice:
-        raise HTTPException(status_code=404, detail="Voice not found")
-    
-    # 获取关联的Upload记录
-    upload = upload_repo.get(voice.uploadId)
-    
     try:
-        # 1. 删除Voice记录
-        voice_repo.delete(voice_id)
-        
-        # 2. 删除关联的Upload记录
-        if upload:
-            upload_repo.delete(voice.uploadId)
-            
-            # 3. 删除关联的音频文件
-            file_deleted = storage.delete_file(voice.uploadId)
-            if not file_deleted:
-                logger.warning(f"Failed to delete file for upload {voice.uploadId}")
+        # 委托给Voice应用服务删除音色
+        success = await voice_service.delete_voice(voice_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Voice not found")
         
         resp = oc8r.VoiceResponse(
             code=200,
             message="Voice and associated files deleted successfully",
-            voice=voice
+            voice=None
         )
         return resp
         
-    except Exception as e:
-        logger.error(f"Error deleting voice {voice_id}: {str(e)}")
-        raise HTTPException(
-            status_code=500, 
-            detail="Failed to delete voice and associated files"
-        )
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        # 业务逻辑错误
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")
 

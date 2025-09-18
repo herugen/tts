@@ -12,9 +12,9 @@
 - 支持音频文件的流式传输
 """
 
-import os
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Depends
+from app.dependencies import get_audio_service
+from app.application.audio_service import AudioApplicationService
 
 router = APIRouter()
 
@@ -23,32 +23,34 @@ router = APIRouter()
     summary="获取音频文件",
     tags=["Audio"]
 )
-async def get_audio_file(filename: str):
+async def get_audio_file(
+    filename: str,
+    audio_service: AudioApplicationService = Depends(get_audio_service)
+):
     """
     获取音频文件
-    - 支持WAV格式音频文件
-    - 返回音频文件流
+    - 委托给Audio应用服务处理业务逻辑
     """
-    # 验证文件扩展名
-    if not filename.endswith('.wav'):
+    # 验证文件名格式
+    if not filename:
         raise HTTPException(
-            status_code=400, 
-            detail="Only WAV files are supported"
+            status_code=400,
+            detail="Filename is required"
         )
     
-    # 构建文件路径
-    file_path = os.path.join("data/outputs", filename)
-    
-    # 检查文件是否存在
-    if not os.path.exists(file_path):
+    # 检查文件扩展名
+    if not filename.endswith('.wav'):
+        # 对于不支持的格式，抛出HTTP异常
+        raise HTTPException(
+            status_code=400,
+            detail="Only WAV files are supported"
+        )
+    # 委托给Audio应用服务获取音频文件
+    file_response = await audio_service.get_audio_file(filename)
+    if not file_response:
         raise HTTPException(
             status_code=404, 
             detail="Audio file not found"
         )
     
-    # 返回音频文件
-    return FileResponse(
-        path=file_path,
-        media_type="audio/wav",
-        filename=filename
-    )
+    return file_response

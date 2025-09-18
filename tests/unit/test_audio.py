@@ -3,19 +3,17 @@
 测试 /audio/{filename} 端点的功能
 """
 
-import pytest
 import os
-import tempfile
+import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
-from app.main import app
 
 class TestAudioEndpoint:
     """音频文件服务端点测试类"""
     
-    def setup_method(self):
-        """测试前准备"""
-        self.client = TestClient(app)
+    @pytest.fixture(autouse=True)
+    def setup_test_environment(self, test_client):
+        """测试环境设置"""
+        self.client = test_client
         # 确保输出目录存在
         self.output_dir = "data/outputs"
         os.makedirs(self.output_dir, exist_ok=True)

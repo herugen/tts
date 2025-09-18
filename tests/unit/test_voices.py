@@ -163,8 +163,8 @@ class TestVoiceEndpoint:
         
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "voice" in data
-        assert data["voice"]["id"] == sample_voice.id
+        assert "message" in data
+        assert data["voice"] is None  # 删除后voice字段为None
         
         # 验证音色已被删除
         get_response = test_client.get(f"/api/v1/voices/{sample_voice.id}")

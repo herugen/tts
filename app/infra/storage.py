@@ -107,8 +107,8 @@ class LocalFileStorage:
                         os.remove(file_path)
                         return True
             return False
-        except Exception as e:
-            logger.error(f"Failed to delete file {file_id}: {str(e)}")
+        except OSError as e:
+            logger.error("Failed to delete file %s: %s", file_id, str(e))
             return False
 
     def get_file_path(self, file_id: str) -> Optional[str]:
@@ -124,7 +124,66 @@ class LocalFileStorage:
                     if os.path.exists(file_path):
                         return file_path
             return None
-        except Exception as e:
-            logger.error(f"Failed to get file path for {file_id}: {str(e)}")
+        except OSError as e:
+            logger.error("Failed to get file path for %s: %s", file_id, str(e))
             return None
+
+    async def save_audio_file(self, audio_data: bytes, filename: str) -> str:
+        """
+        保存音频文件到输出目录
+        :param audio_data: 音频数据
+        :param filename: 文件名
+        :return: 文件路径
+        """
+        try:
+            # 确保输出目录存在
+            output_dir = "data/outputs"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # 构建完整文件路径
+            file_path = os.path.join(output_dir, filename)
+            
+            # 写入文件
+            with open(file_path, 'wb') as f:
+                f.write(audio_data)
+            
+            return file_path
+        except OSError as e:
+            logger.error("Failed to save audio file %s: %s", filename, str(e))
+            raise
+
+    async def get_audio_file_path(self, filename: str) -> Optional[str]:
+        """
+        获取音频文件路径
+        :param filename: 文件名
+        :return: 文件路径，如果不存在返回None
+        """
+        try:
+            output_dir = "data/outputs"
+            file_path = os.path.join(output_dir, filename)
+            
+            if os.path.exists(file_path):
+                return file_path
+            return None
+        except OSError as e:
+            logger.error("Failed to get audio file path for %s: %s", filename, str(e))
+            return None
+
+    async def delete_audio_file(self, filename: str) -> bool:
+        """
+        删除音频文件
+        :param filename: 文件名
+        :return: 是否删除成功
+        """
+        try:
+            output_dir = "data/outputs"
+            file_path = os.path.join(output_dir, filename)
+            
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                return True
+            return False
+        except OSError as e:
+            logger.error("Failed to delete audio file %s: %s", filename, str(e))
+            return False
 

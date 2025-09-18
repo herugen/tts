@@ -20,13 +20,8 @@
 from fastapi import APIRouter, status, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from app.models import oc8r
-from datetime import datetime
-import uuid
-# from typing import Optional  # 暂时未使用
-from app.infra.repositories import TtsJobRepository
-from app.infra.queue import get_queue_manager
-from app.db_conn import get_db_conn
-import sqlite3
+from app.dependencies import get_tts_service
+from app.application.tts_service import TtsApplicationService
 
 router = APIRouter()
 
@@ -39,38 +34,30 @@ router = APIRouter()
 )
 async def create_tts_job(
     body: oc8r.CreateTtsJobRequest,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     提交 TTS 任务，入队并返回 202 TtsJobResponse（状态为 queued）
-    - 当前为占位实现，仅返回模拟数据
+    - 委托给TTS应用服务处理业务逻辑
     """
-    job_repo = TtsJobRepository(db)
-    now = datetime.now().isoformat()
-    # 入队占位 payload（后续由策略构建完整 payload）
-    qm = get_queue_manager()
-    job_id = await qm.enqueue({
-        "request": body.model_dump(mode='json'),
-        "createdAt": now,
-    })
-    job = oc8r.TtsJob(
-        id=job_id,
-        type=oc8r.Type.tts,
-        status=oc8r.JobStatus.queued,
-        createdAt=now,
-        updatedAt=now,
-        request=body,
-        result=None,
-        error=None
-    )
-    # 持久化入库（queued 状态）
-    job_repo.add(job)
-    resp = oc8r.TtsJobResponse(
-        code=202,
-        message="Job queued",
-        job=job
-    )
-    return JSONResponse(status_code=202, content=resp.model_dump(mode='json'))
+    try:
+        # 委托给TTS应用服务创建任务
+        job = await tts_service.create_job(body)
+        
+        # 构建响应
+        resp = oc8r.TtsJobResponse(
+            code=202,
+            message="Job queued",
+            job=job
+        )
+        return JSONResponse(status_code=202, content=resp.model_dump(mode='json'))
+        
+    except ValueError as e:
+        # 业务逻辑错误，如音色不存在
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get(
@@ -82,15 +69,17 @@ async def create_tts_job(
 )
 async def get_tts_job(
     job_id: str,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
-    查询 TTS 任务（占位实现，后续完善实际逻辑）
+    查询 TTS 任务
+    - 委托给TTS应用服务处理业务逻辑
     """
-    job_repo = TtsJobRepository(db)
-    job = job_repo.get(job_id)
+    # 委托给TTS应用服务获取任务
+    job = await tts_service.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
     resp = oc8r.TtsJobResponse(
         code=200,
         message="Job found",
@@ -105,12 +94,19 @@ async def get_tts_job(
     response_model=oc8r.TtsJobListResponse,
     status_code=status.HTTP_200_OK
 )
-async def list_tts_jobs(db: sqlite3.Connection = Depends(get_db_conn)):
+async def list_tts_jobs(
+    job_status: str = None,
+    limit: int = 100,
+    offset: int = 0,
+    tts_service: TtsApplicationService = Depends(get_tts_service)
+):
     """
     查询 TTS 任务
+    - 委托给TTS应用服务处理业务逻辑
     """
-    job_repo = TtsJobRepository(db)
-    jobs = job_repo.list()
+    # 委托给TTS应用服务获取任务列表
+    jobs = await tts_service.list_jobs(status=job_status, limit=limit, offset=offset)
+    
     resp = oc8r.TtsJobListResponse(
         code=200,
         message="Jobs found",
@@ -127,42 +123,33 @@ async def list_tts_jobs(db: sqlite3.Connection = Depends(get_db_conn)):
 )
 async def cancel_tts_job(
     job_id: str,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     取消 TTS 任务
-    - 检查任务是否存在
-    - 如果任务在队列中，从队列中移除
-    - 更新任务状态为cancelled
+    - 委托给TTS应用服务处理业务逻辑
     """
-    job_repo = TtsJobRepository(db)
-    job = job_repo.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    # 检查任务状态，只有queued和running状态可以取消
-    if job.status not in [oc8r.JobStatus.queued, oc8r.JobStatus.running]:
-        raise HTTPException(status_code=400, detail="Job cannot be cancelled in current status")
-    
-    # 从队列中取消任务
-    qm = get_queue_manager()
-    await qm.cancel(job_id)
-    
-    # 更新数据库状态
-    job_repo.update(
-        job_id,
-        status=oc8r.JobStatus.cancelled,
-        updatedAt=datetime.now().isoformat()
-    )
-    
-    # 重新获取更新后的任务
-    updated_job = job_repo.get(job_id)
-    resp = oc8r.TtsJobResponse(
-        code=200,
-        message="Job cancelled successfully",
-        job=updated_job
-    )
-    return JSONResponse(status_code=200, content=resp.model_dump(mode='json'))
+    try:
+        # 委托给TTS应用服务取消任务
+        job = await tts_service.cancel_job(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        resp = oc8r.TtsJobResponse(
+            code=200,
+            message="Job cancelled successfully",
+            job=job
+        )
+        return JSONResponse(status_code=200, content=resp.model_dump(mode='json'))
+        
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        # 业务逻辑错误，如任务状态不允许取消
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post(
     "/tts/jobs/{job_id}/retry",
@@ -173,50 +160,30 @@ async def cancel_tts_job(
 )
 async def retry_tts_job(
     job_id: str,
-    db: sqlite3.Connection = Depends(get_db_conn)
+    tts_service: TtsApplicationService = Depends(get_tts_service)
 ):
     """
     重试 TTS 任务
-    - 检查原任务是否存在且状态为failed
-    - 创建新的任务记录，复制原请求参数
-    - 将新任务加入队列
+    - 委托给TTS应用服务处理业务逻辑
     """
-    job_repo = TtsJobRepository(db)
-    original_job = job_repo.get(job_id)
-    if not original_job:
-        raise HTTPException(status_code=404, detail="Original job not found")
-    
-    # 只有失败的任务可以重试
-    if original_job.status != oc8r.JobStatus.failed:
-        raise HTTPException(status_code=400, detail="Only failed jobs can be retried")
-    
-    # 创建新的任务记录
-    now = datetime.now().isoformat()
-    new_job_id = str(uuid.uuid4())
-    new_job = oc8r.TtsJob(
-        id=new_job_id,
-        type=original_job.type,
-        status=oc8r.JobStatus.queued,
-        createdAt=now,
-        updatedAt=now,
-        request=original_job.request,
-        result=None,
-        error=None
-    )
-    
-    # 保存新任务到数据库
-    job_repo.add(new_job)
-    
-    # 将新任务加入队列
-    qm = get_queue_manager()
-    await qm.enqueue({
-        "request": original_job.request.model_dump(mode='json'),
-        "createdAt": now,
-    })
-    
-    resp = oc8r.TtsJobResponse(
-        code=201,
-        message="Job retry created successfully",
-        job=new_job
-    )
-    return JSONResponse(status_code=201, content=resp.model_dump(mode='json'))
+    try:
+        # 委托给TTS应用服务重试任务
+        job = await tts_service.retry_job(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        resp = oc8r.TtsJobResponse(
+            code=201,
+            message="Job retry created successfully",
+            job=job
+        )
+        return JSONResponse(status_code=201, content=resp.model_dump(mode='json'))
+        
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        # 业务逻辑错误，如任务状态不允许重试
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")

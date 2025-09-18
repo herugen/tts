@@ -310,14 +310,20 @@ class TtsJobRepository:
             )
         return None
 
-    def list(self, limit: int = 100, offset: int = 0) -> List[oc8r.TtsJob]:
+    def list(self, status: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[oc8r.TtsJob]:
         """
-        列表查询 TtsJob，支持分页
+        列表查询 TtsJob，支持分页和状态过滤
         """
-        cur = self.conn.execute(
-            "SELECT id, type, status, createdAt, updatedAt, request, result, error FROM tts_jobs ORDER BY createdAt DESC LIMIT ? OFFSET ?",
-            (limit, offset)
-        )
+        if status:
+            cur = self.conn.execute(
+                "SELECT id, type, status, createdAt, updatedAt, request, result, error FROM tts_jobs WHERE status = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?",
+                (status, limit, offset)
+            )
+        else:
+            cur = self.conn.execute(
+                "SELECT id, type, status, createdAt, updatedAt, request, result, error FROM tts_jobs ORDER BY createdAt DESC LIMIT ? OFFSET ?",
+                (limit, offset)
+            )
         items: List[oc8r.TtsJob] = []
         for row in cur.fetchall():
             # 反序列化JSON字段

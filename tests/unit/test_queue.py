@@ -3,7 +3,6 @@
 测试 /queue/status 端点的功能
 """
 
-import pytest
 from fastapi import status
 from unittest.mock import patch, MagicMock
 
@@ -44,12 +43,20 @@ class TestQueueEndpoint:
     
     def test_get_queue_status_with_running_job(self, test_client):
         """测试有运行中任务时的队列状态"""
-        with patch('app.api.queue.get_queue_manager') as mock_get_queue:
-            mock_queue_manager = MagicMock()
-            # 修复：设置方法返回值而不是属性
-            mock_queue_manager.running_job_id.return_value = "running-job-123"
-            mock_queue_manager.queue_length.return_value = 3
-            mock_get_queue.return_value = mock_queue_manager
+        with patch('app.container.app_container.get_queue_service') as mock_get_queue_service:
+            mock_queue_service = MagicMock()
+            # 创建mock的QueueStatus对象
+            from app.models.oc8r import QueueStatus
+            mock_status = QueueStatus(
+                maxConcurrency=1,
+                runningJobId="running-job-123",
+                queueLength=3,
+                averageWaitSeconds=None
+            )
+            # 使用AsyncMock来模拟异步方法
+            from unittest.mock import AsyncMock
+            mock_queue_service.get_status = AsyncMock(return_value=mock_status)
+            mock_get_queue_service.return_value = mock_queue_service
             
             response = test_client.get("/api/v1/queue/status")
             
@@ -61,11 +68,20 @@ class TestQueueEndpoint:
     
     def test_get_queue_status_empty_queue(self, test_client):
         """测试空队列状态"""
-        with patch('app.api.queue.get_queue_manager') as mock_get_queue:
-            mock_queue_manager = MagicMock()
-            mock_queue_manager.running_job_id.return_value = None
-            mock_queue_manager.queue_length.return_value = 0
-            mock_get_queue.return_value = mock_queue_manager
+        with patch('app.container.app_container.get_queue_service') as mock_get_queue_service:
+            mock_queue_service = MagicMock()
+            # 创建mock的QueueStatus对象
+            from app.models.oc8r import QueueStatus
+            mock_status = QueueStatus(
+                maxConcurrency=1,
+                runningJobId=None,
+                queueLength=0,
+                averageWaitSeconds=None
+            )
+            # 使用AsyncMock来模拟异步方法
+            from unittest.mock import AsyncMock
+            mock_queue_service.get_status = AsyncMock(return_value=mock_status)
+            mock_get_queue_service.return_value = mock_queue_service
             
             response = test_client.get("/api/v1/queue/status")
             

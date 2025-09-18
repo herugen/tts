@@ -14,14 +14,11 @@
 - 依赖 oc8r.UploadResponse/Upload 组装响应体
 """
 
-from fastapi import APIRouter, UploadFile, File, status, Depends
+from fastapi import APIRouter, UploadFile, File, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from app.infra.storage import LocalFileStorage
 from app.models import oc8r
-from datetime import datetime
-from app.infra.repositories import UploadRepository
-from app.db_conn import get_db_conn
-import sqlite3
+from app.dependencies import get_upload_service
+from app.application.upload_service import UploadApplicationService
 
 router = APIRouter()
 
@@ -34,32 +31,35 @@ router = APIRouter()
 )
 async def upload_file(
     file: UploadFile = File(...),
-    db: sqlite3.Connection = Depends(get_db_conn)
+    upload_service: UploadApplicationService = Depends(get_upload_service)
 ):
     """
     上传音频文件接口
-    - 使用 LocalFileStorage.save_upload 校验并保存文件
-    - 返回 UploadResponse，包含 upload 字段
-    - durationSeconds 暂时返回 None
-    - 数据库连接通过 FastAPI 依赖注入获取
+    - 委托给Upload应用服务处理业务逻辑
     """
-    storage = LocalFileStorage()
-    file_id, _, content_type, size_bytes = storage.save_upload(file)
-
-    upload = oc8r.Upload(
-        id=file_id,
-        fileName=file.filename,
-        contentType=content_type,
-        sizeBytes=size_bytes,
-        durationSeconds=None,  # 目前不做时长分析
-        createdAt=datetime.now().isoformat()
-    )
-    upload_repo = UploadRepository(db)
-    upload_repo.add(upload)
-
-    resp = oc8r.UploadResponse(
-        code=201,
-        message="Upload succeeded",
-        upload=upload
-    )
-    return JSONResponse(status_code=201, content=resp.model_dump())
+    try:
+        if not file.content_type or not file.content_type.startswith('audio/'):
+            raise HTTPException(status_code=415, detail="Only audio files are supported")
+        
+        if file.size > 20 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File too large")
+        
+        # 委托给Upload应用服务上传文件
+        upload = await upload_service.upload_file(file)
+        
+        # 构建响应
+        resp = oc8r.UploadResponse(
+            code=201,
+            message="Upload succeeded",
+            upload=upload
+        )
+        return JSONResponse(status_code=201, content=resp.model_dump())
+        
+    except HTTPException as e:
+        raise e
+    except ValueError as e:
+        # 业务逻辑错误，如文件类型不支持
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception:
+        # 其他系统错误
+        raise HTTPException(status_code=500, detail="Internal server error")
