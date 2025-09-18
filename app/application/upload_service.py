@@ -27,9 +27,7 @@ class UploadApplicationService:
     """
 
     def __init__(
-        self,
-        storage: LocalFileStorage,
-        upload_repo: Optional[UploadRepository] = None
+        self, storage: LocalFileStorage, upload_repo: Optional[UploadRepository] = None
     ):
         """
         初始化Upload应用服务

@@ -103,7 +103,7 @@ class TestDataGenerator:
                 emotionWeight=None,
                 emotionFactors=None,
                 emotionRandom=None,
-                emotionText=None
+                emotionText=None,
             ),
             result=None,
             error=None,
@@ -125,7 +125,7 @@ class TestDataGenerator:
             emotionWeight=None,
             emotionFactors=None,
             emotionRandom=None,
-            emotionText=None
+            emotionText=None,
         )
 
     @staticmethod
@@ -149,7 +149,7 @@ class TestDataGenerator:
             emotionWeight=emotion_weight,
             emotionFactors=None,
             emotionRandom=None,
-            emotionText=None
+            emotionText=None,
         )
 
     @staticmethod
@@ -181,7 +181,7 @@ class TestDataGenerator:
             emotionAudioId=None,
             emotionWeight=None,
             emotionRandom=None,
-            emotionText=None
+            emotionText=None,
         )
 
     @staticmethod
@@ -202,7 +202,7 @@ class TestDataGenerator:
             emotionAudioId=None,
             emotionWeight=None,
             emotionFactors=None,
-            emotionRandom=None
+            emotionRandom=None,
         )
 
     @staticmethod
@@ -474,8 +474,7 @@ class TestDataGenerator:
 
     @staticmethod
     def setup_mock_tts_job_repo(
-        job_repo: Mock,
-        jobs: Optional[List[oc8r.TtsJob]] = None
+        job_repo: Mock, jobs: Optional[List[oc8r.TtsJob]] = None
     ):
         """设置模拟TtsJob仓储的行为"""
         if jobs is None:
@@ -489,9 +488,7 @@ class TestDataGenerator:
 
     @staticmethod
     def setup_mock_storage(
-        storage: Mock,
-        file_exists: bool = True,
-        file_path: Optional[str] = None
+        storage: Mock, file_exists: bool = True, file_path: Optional[str] = None
     ):
         """设置模拟存储服务的行为"""
         if file_path is None:
@@ -507,9 +504,7 @@ class TestDataGenerator:
         storage.delete_file.return_value = None
 
     @staticmethod
-    def setup_mock_queue_manager(
-        queue_manager: Mock, job_id: Optional[str] = None
-    ):
+    def setup_mock_queue_manager(queue_manager: Mock, job_id: Optional[str] = None):
         """设置模拟队列管理器的行为"""
         if job_id is None:
             job_id = str(uuid.uuid4())

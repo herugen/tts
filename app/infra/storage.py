@@ -88,7 +88,7 @@ class LocalFileStorage:
             file_id,
             file_path,
             file.content_type or "application/octet-stream",
-            size_bytes
+            size_bytes,
         )
 
     def _get_extension(self, filename: str) -> str:
