@@ -305,12 +305,15 @@ class TestDataGenerator:
     @staticmethod
     def create_queue_application_service(
         queue_manager: Optional[QueueManager] = None,
+        tts_processor: Optional[TtsTaskProcessor] = None,
     ) -> QueueApplicationService:
         """创建Queue应用服务实例"""
         if queue_manager is None:
             queue_manager = Mock(spec=QueueManager)
+        if tts_processor is None:
+            tts_processor = Mock(spec=TtsTaskProcessor)
 
-        return QueueApplicationService(queue_manager)
+        return QueueApplicationService(queue_manager, tts_processor)
 
     @staticmethod
     def create_audio_application_service(
@@ -577,15 +580,16 @@ class TestDataGenerator:
             voice_repo, storage, upload_repo
         )
         upload_service = TestDataGenerator.create_upload_application_service(storage)
-        queue_service = TestDataGenerator.create_queue_application_service(
-            queue_manager
-        )
-        audio_service = TestDataGenerator.create_audio_application_service(storage)
-        file_app_service = TestDataGenerator.create_file_application_service(storage)
-
         # 创建任务处理器
         processor = TestDataGenerator.create_tts_task_processor(
-            voice_repo, upload_repo, storage, client, file_app_service
+            voice_repo, upload_repo, storage, client, file_service
+        )
+
+        queue_service = TestDataGenerator.create_queue_application_service(
+            queue_manager, processor
+        )
+        audio_service = TestDataGenerator.create_audio_application_service(
+            file_service
         )
 
         return {
@@ -607,7 +611,7 @@ class TestDataGenerator:
                 "upload_service": upload_service,
                 "queue_service": queue_service,
                 "audio_service": audio_service,
-                "file_service": file_app_service,
+                "file_service": file_service,
             },
             "processor": processor,
         }

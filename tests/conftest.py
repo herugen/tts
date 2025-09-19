@@ -16,7 +16,6 @@ import sqlite3
 from unittest.mock import Mock, AsyncMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from app.infra.queue import start_queue, stop_queue
 from app.infra.repositories import TtsJobRepository, VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
 from app.infra.indextts_client import IndexTtsClient
@@ -217,9 +216,9 @@ def upload_service_fixture(mock_storage):
 
 
 @pytest.fixture(scope="function")
-def queue_service_fixture(mock_queue_manager):
+def queue_service_fixture(mock_queue_manager, tts_processor_fixture):
     """创建测试Queue应用服务"""
-    return QueueApplicationService(mock_queue_manager)
+    return QueueApplicationService(mock_queue_manager, tts_processor_fixture)
 
 
 @pytest.fixture(scope="function")
@@ -318,9 +317,8 @@ def test_client_with_mocks(test_app, test_db, mock_dependencies):
 @pytest.fixture(scope="function")
 async def test_queue():
     """创建测试队列"""
-    await start_queue()
+    # 队列现在通过 QueueApplicationService 管理，不需要单独的测试队列
     yield
-    await stop_queue()
 
 
 @pytest.fixture

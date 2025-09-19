@@ -156,8 +156,12 @@ class ApplicationContainer:
         service_key = f"queue_service_{id(db)}"
         if service_key not in self._services:
             queue_manager = get_queue_manager()
+            # 通过容器获取TTS处理器依赖
+            tts_processor = self.get_tts_processor(db)
 
-            self._services[service_key] = QueueApplicationService(queue_manager)
+            self._services[service_key] = QueueApplicationService(
+                queue_manager, tts_processor
+            )
             self._initialized_services.add(service_key)
 
         return self._services[service_key]
