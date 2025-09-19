@@ -23,7 +23,7 @@ from app.api import voices
 from app.api import jobs
 from app.api import audio
 from app.db_conn import startup, shutdown
-from app.infra.queue import start_queue, stop_queue
+from app.infra.queue import start_queue, stop_queue, get_queue_manager
 from app.middleware import (
     http_exception_handler,
     validation_exception_handler,
@@ -51,6 +51,14 @@ async def lifespan(_: FastAPI):
 
     # 通过容器获取TTS任务处理器
     tts_processor = app_container.get_tts_processor()
+
+    # 获取TTS应用服务，用于注册状态变更回调
+    tts_service = app_container.get_tts_service()
+
+    # 获取队列管理器并注册状态变更回调
+    queue_manager = get_queue_manager()
+    queue_manager.set_callback(tts_service.handle_status_change)
+    logger.info("Job status change callback registered")
 
     # 启动队列，注入TTS处理器
     await start_queue(tts_processor.process_tts_task)

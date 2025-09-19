@@ -38,10 +38,14 @@ class QueueManager:
         """
         self.queue = asyncio.Queue()
         self.status_map: Dict[str, Dict[str, Any]] = {}
-        self.status_callback: Optional[Callable[..., Any]] = None
+        self.status_callback: Optional[
+            Callable[[str, oc8r.JobStatus, Optional[Any]], Any]
+        ] = None
         self.current_task_id: Optional[str] = None
 
-    def set_callback(self, status_callback: Callable):
+    def set_callback(
+        self, status_callback: Callable[[str, oc8r.JobStatus, Optional[Any]], Any]
+    ):
         """
         设置任务状态变更回调函数。
         :param status_callback: 任务状态变更回调函数
@@ -81,7 +85,7 @@ class QueueManager:
         self.status_map[task_id]["status"] = status
         self.status_map[task_id]["result"] = result
         if self.status_callback is not None:
-            await self.status_callback(job_id=task_id, status=status, result=result)
+            await self.status_callback(task_id, status, result)
 
     async def cancel(self, task_id: str):
         """
@@ -122,7 +126,7 @@ class Worker:
     单 worker 协程，持续消费队列任务并处理。
     """
 
-    def __init__(self, queue_mgr: QueueManager, handler: Callable):
+    def __init__(self, queue_mgr: QueueManager, handler: Callable[[Any], Any]):
         """
         :param queue_mgr: 队列管理器实例
         :param handler: 任务处理函数，签名为 async def handler(payload) -> result
@@ -186,7 +190,7 @@ async def _default_task_handler(_payload: Any) -> Any:
     return {"ok": True, "message": "Default handler processed task"}
 
 
-async def start_queue(task_handler: Optional[Callable[..., Any]] = None) -> None:
+async def start_queue(task_handler: Optional[Callable[[Any], Any]] = None) -> None:
     """
     启动队列
 

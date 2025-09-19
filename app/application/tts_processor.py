@@ -16,10 +16,12 @@ import logging
 from typing import Any, Dict
 from app.models import oc8r
 from app.application.tts_strategies import TtsStrategyFactory
-from app.infra.indextts_client import IndexTtsClient
+from app.infra.indextts_client import IndexTtsClient, IndexTtsBusyError
 from app.infra.repositories import VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
 from app.application.file_service import FileApplicationService
+import asyncio
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class TtsTaskProcessor:
 
     async def process_tts_task(self, payload: Any) -> Dict[str, Any]:
         """
-        处理TTS任务 - 纯业务逻辑
+        处理TTS任务 - 纯业务逻辑，包含busy重试机制
 
         Args:
             payload: 任务载荷，包含请求数据
@@ -88,10 +90,53 @@ class TtsTaskProcessor:
             await strategy.validate_request(request)
 
             # 4. 执行TTS合成 - 业务逻辑
-            result = await strategy.synthesize(request)
+            result = await self._synthesize_with_retry(strategy, request)
 
             return result
 
+        except HTTPException as e:
+            logger.error("TTS server error: %s", str(e))
+            raise
         except Exception as e:
             logger.error("TTS task processing failed: %s", str(e))
             raise
+
+    async def _synthesize_with_retry(
+        self, strategy, request: oc8r.CreateTtsJobRequest
+    ) -> Dict[str, Any]:
+        """
+        执行TTS合成，支持busy重试
+
+        Args:
+            strategy: TTS策略
+            request: TTS请求
+
+        Returns:
+            Dict[str, Any]: 合成结果
+        """
+        max_retries = 10
+        retry_count = 0
+
+        while retry_count < max_retries:
+            try:
+                result = await strategy.synthesize(request)
+                return result
+            except IndexTtsBusyError as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    logger.error(
+                        "IndexTTS service busy after %d retries in synthesis",
+                        max_retries,
+                    )
+                    raise e
+
+                logger.warning(
+                    "IndexTTS service is busy, will retry in 60 seconds (%d/%d)",
+                    retry_count,
+                    max_retries,
+                )
+                await asyncio.sleep(60)
+                continue
+            except Exception as e:
+                raise e
+        raise RuntimeError("Unexpected end of retry loop")

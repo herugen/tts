@@ -25,6 +25,15 @@ import base64
 logger = logging.getLogger(__name__)
 
 
+class IndexTtsBusyError(Exception):
+    """
+    IndexTTS服务繁忙异常
+    当服务返回busy状态时抛出此异常，用于触发重试机制
+    """
+
+    pass
+
+
 class IndexTtsClient:
     """
     IndexTTS HTTP Service客户端
@@ -47,26 +56,6 @@ class IndexTtsClient:
     async def close(self):
         """关闭HTTP客户端"""
         await self.client.aclose()
-
-    async def upload_audio(self, file_path: str, filename: str) -> str:
-        """
-        上传音频文件到IndexTTS服务
-        :param file_path: 本地文件路径
-        :param filename: 文件名
-        :return: 上传后的文件ID
-        """
-        try:
-            with open(file_path, "rb") as f:
-                files = {"file": (filename, f, "audio/wav")}
-                response = await self.client.post(
-                    f"{self.base_url}/upload", files=files
-                )
-                response.raise_for_status()
-                result = response.json()
-                return result.get("file_id")
-        except Exception as e:
-            logger.error("Failed to upload audio file %s: %s", file_path, str(e))
-            raise
 
     async def synthesize_speaker(
         self,
@@ -225,26 +214,15 @@ class IndexTtsClient:
                 )
 
         except httpx.HTTPStatusError as e:
-            logger.error(
-                "IndexTTS HTTP error: %d - %s", e.response.status_code, e.response.text
-            )
+            # 检查是否为busy状态（通常为429 Too Many Requests）
+            if e.response.status_code in [429]:
+                logger.warning("IndexTTS service is busy, will retry later")
+                raise IndexTtsBusyError(
+                    f"IndexTTS service busy: {e.response.status_code}"
+                )
             raise RuntimeError(
                 f"IndexTTS service error: {e.response.status_code}"
             ) from e
         except Exception as e:
             logger.error("IndexTTS synthesis failed: %s", str(e))
-            raise
-
-    async def _download_audio(self, audio_url: str) -> bytes:
-        """
-        下载音频文件
-        :param audio_url: 音频文件URL
-        :return: 音频文件数据
-        """
-        try:
-            response = await self.client.get(audio_url)
-            response.raise_for_status()
-            return response.content
-        except Exception as e:
-            logger.error("Failed to download audio from %s: %s", audio_url, str(e))
             raise

@@ -55,6 +55,7 @@ format:
 lint:
 	@echo "🔍 代码质量检查..."
 	flake8 app/ tests/
+	mypy app/ tests/ --ignore-missing-imports
 	@echo "✅ 代码质量检查完成"
 
 # 清理测试文件

@@ -14,11 +14,21 @@ TTS应用服务
 - 不包含具体的业务逻辑
 """
 
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import datetime
-from app.models.oc8r import TtsJob, CreateTtsJobRequest, JobStatus, Type
+from app.models.oc8r import (
+    TtsJob,
+    CreateTtsJobRequest,
+    JobStatus,
+    Type,
+    Result,
+    ErrorResponse,
+)
 from app.infra.repositories import TtsJobRepository, VoiceRepository
 from app.infra.queue import QueueManager
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TtsApplicationService:
@@ -179,3 +189,49 @@ class TtsApplicationService:
         # 保存新任务到数据库
         self.job_repo.add(new_job)
         return new_job
+
+    async def handle_status_change(
+        self, job_id: str, status: JobStatus, result: Optional[Any] = None
+    ) -> None:
+        """
+        处理任务状态变更的持久化回调
+
+        这个方法会被QueueManager的状态变更回调调用，负责将状态变更持久化到数据库。
+        作为应用层的业务协调，确保数据一致性。
+
+        Args:
+            job_id: 任务ID
+            status: 新的任务状态
+            result: 任务结果（可选）
+        """
+        try:
+            # 获取当前任务信息
+            job = self.job_repo.get(job_id)
+            if not job:
+                logger.warning(
+                    "Job %s not found in database, skipping status update", job_id
+                )
+                return
+
+            # 准备更新数据
+            update_result: Optional[Result] = None
+            update_error: Optional[ErrorResponse] = None
+
+            # 根据状态处理结果数据
+            if status == JobStatus.succeeded and result:
+                update_result = Result(**result)
+
+            elif status == JobStatus.failed and result:
+                update_error = ErrorResponse(code="TTS_ERROR", message=str(result))
+
+            # 执行数据库更新
+            self.job_repo.update(
+                job_id,
+                status=status,
+                result=update_result,
+                error=update_error,
+                updatedAt=datetime.now().isoformat(),
+            )
+
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error("Failed to update job %s status to %s: %s", job_id, status, e)
