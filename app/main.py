@@ -23,7 +23,6 @@ from app.api import voices
 from app.api import jobs
 from app.api import audio
 from app.db_conn import startup, shutdown
-from app.infra.queue import get_queue_manager
 from app.middleware import (
     http_exception_handler,
     validation_exception_handler,

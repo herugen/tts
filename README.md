@@ -211,6 +211,58 @@ curl -X GET "http://localhost:8000/api/v1/tts/jobs/job_123" \
 curl -X GET "http://localhost:8000/api/v1/audio/generated_audio.wav"
 ```
 
+## 测试
+
+项目包含完整的测试套件，支持单元测试和集成测试。
+
+### 运行测试
+
+#### 单元测试
+```bash
+# 运行所有单元测试
+make test
+
+# 或直接运行
+python tests/scripts/run_tests.py
+```
+
+#### 集成测试
+```bash
+# 运行端到端集成测试
+make integration-test
+
+# 或直接运行
+./tests/scripts/run_integration_test.sh
+```
+
+#### 运行所有测试
+```bash
+# 先运行单元测试
+make test
+
+# 再运行集成测试  
+make integration-test
+```
+
+### 测试说明
+
+- **单元测试**: 测试各个组件的独立功能
+- **集成测试**: 测试完整的API工作流程，包括：
+  - 文件上传和音色创建
+  - TTS任务创建和执行
+  - 音频文件生成和下载
+  - 错误处理和边界情况
+
+### 测试环境
+
+集成测试会自动：
+- 启动IndexTTS Mock服务（端口8001）
+- 启动TTS主服务（端口8000）
+- 运行完整的API测试流程
+- 自动清理所有服务进程
+
+详细说明请参考 [tests/scripts/README.md](tests/scripts/README.md)。
+
 ## 监控和运维
 
 ### 健康检查

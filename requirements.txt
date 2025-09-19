@@ -32,6 +32,7 @@ datamodel-code-generator>=0.25.0
 
 # 类型提示
 typing-extensions>=4.8.0
+types-requests>=2.32.0
 
 # 开发工具
 # 代码格式化和检查

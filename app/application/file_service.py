@@ -28,14 +28,18 @@ class FileService:
     作为应用层的业务服务，只包含业务逻辑，不包含技术实现细节。
     """
 
-    def __init__(self, storage: LocalFileStorage):
+    def __init__(
+        self, storage: LocalFileStorage, base_url: str = "http://localhost:8000"
+    ):
         """
         初始化文件处理服务
 
         Args:
             storage: 文件存储服务
+            base_url: 服务基础URL，用于生成完整的音频文件URL
         """
         self.storage = storage
+        self.base_url = base_url.rstrip("/")
 
     async def save_audio_result(
         self, audio_data: bytes, job_id: Optional[str] = None
@@ -62,7 +66,7 @@ class FileService:
 
             # 构建返回结果 - 业务逻辑
             result = {
-                "audioUrl": f"/api/v1/audio/{output_filename}",
+                "audioUrl": f"{self.base_url}/api/v1/audio/{output_filename}",
                 "durationSeconds": None,  # 规范中没有duration字段
                 "format": "wav",
             }

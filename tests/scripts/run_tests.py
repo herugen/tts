@@ -25,7 +25,6 @@ def run_tests():
         "-m",
         "pytest",
         "tests/unit/",
-        "tests/integration/",
         "-v",  # 详细输出
         "--tb=short",  # 简短的错误追踪
         "--color=yes",  # 彩色输出
@@ -53,7 +52,6 @@ def run_specific_test(test_file):
         "-m",
         "pytest",
         f"tests/unit/{test_file}",
-        f"tests/integration/{test_file}",
         "-v",
         "--tb=short",
         "--color=yes",

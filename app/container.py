@@ -31,6 +31,7 @@ from app.application.tts_processor import TtsTaskProcessor
 from app.application.file_service import FileService
 from app.infra.indextts_client import IndexTtsClient
 from app.db_conn import get_db_conn
+import os
 
 
 class ApplicationContainer:
@@ -226,8 +227,10 @@ class ApplicationContainer:
         service_key = f"file_service_{id(db)}"
         if service_key not in self._services:
             storage = LocalFileStorage()
+            # 从环境变量获取基础URL，默认为localhost:8000
+            base_url = os.getenv("TTS_BASE_URL", "http://localhost:8000")
 
-            self._services[service_key] = FileService(storage)
+            self._services[service_key] = FileService(storage, base_url)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]

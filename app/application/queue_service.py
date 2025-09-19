@@ -126,7 +126,9 @@ class QueueService:
             return  # 已经在运行
 
         # 创建Worker实例，注入TTS处理器
-        self.worker = QueueWorker(self.queue_manager, self.tts_processor.process)
+        self.worker = QueueWorker(
+            self.queue_manager, self.tts_processor.process_tts_task
+        )
         self._worker_task = asyncio.create_task(self.worker.run())
 
     async def stop_processing(self):

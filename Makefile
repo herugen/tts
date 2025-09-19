@@ -34,16 +34,20 @@ run:
 	@echo "🚀 启动应用..."
 	uvicorn app.main:app --reload
 
-
-# 安装测试依赖
+# 安装依赖
 install-deps:
 	@echo "📦 安装依赖..."
 	pip install -r requirements.txt
 
-# 所有测试
+
 test:
-	@echo "🧪 运行所有测试..."
+	@echo "🧪 运行单元测试..."
 	python tests/scripts/run_tests.py
+
+# 运行集成测试
+integration-test:
+	@echo "🧪 运行集成测试..."
+	@./tests/scripts/run_integration_test.sh
 
 # 代码格式化
 format:
