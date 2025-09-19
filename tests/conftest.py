@@ -21,13 +21,13 @@ from app.infra.storage import LocalFileStorage
 from app.infra.indextts_client import IndexTtsClient
 from app.models import oc8r
 from app.container import ApplicationContainer
-from app.application.tts_service import TtsApplicationService
-from app.application.voice_service import VoiceApplicationService
-from app.application.upload_service import UploadApplicationService
-from app.application.queue_service import QueueApplicationService
-from app.application.audio_service import AudioApplicationService
+from app.application.tts_service import TtsService
+from app.application.voice_service import VoiceService
+from app.application.upload_service import UploadService
+from app.application.queue_service import QueueService
+from app.application.audio_service import AudioService
 from app.application.tts_processor import TtsTaskProcessor
-from app.application.file_service import FileApplicationService
+from app.application.file_service import FileService
 import uuid
 from datetime import datetime
 from app.middleware import (
@@ -198,7 +198,7 @@ def tts_service_fixture(test_db, mock_queue_manager):
     """创建测试TTS应用服务"""
     job_repo = TtsJobRepository(test_db)
     voice_repo = VoiceRepository(test_db)
-    return TtsApplicationService(job_repo, voice_repo, mock_queue_manager)
+    return TtsService(job_repo, voice_repo, mock_queue_manager)
 
 
 @pytest.fixture(scope="function")
@@ -206,25 +206,25 @@ def voice_service_fixture(test_db, mock_storage):
     """创建测试Voice应用服务"""
     voice_repo = VoiceRepository(test_db)
     upload_repo = UploadRepository(test_db)
-    return VoiceApplicationService(voice_repo, mock_storage, upload_repo)
+    return VoiceService(voice_repo, mock_storage, upload_repo)
 
 
 @pytest.fixture(scope="function")
 def upload_service_fixture(mock_storage):
     """创建测试Upload应用服务"""
-    return UploadApplicationService(mock_storage)
+    return UploadService(mock_storage)
 
 
 @pytest.fixture(scope="function")
 def queue_service_fixture(mock_queue_manager, tts_processor_fixture):
     """创建测试Queue应用服务"""
-    return QueueApplicationService(mock_queue_manager, tts_processor_fixture)
+    return QueueService(mock_queue_manager, tts_processor_fixture)
 
 
 @pytest.fixture(scope="function")
 def audio_service_fixture(mock_storage):
     """创建测试Audio应用服务"""
-    return AudioApplicationService(mock_storage)
+    return AudioService(mock_storage)
 
 
 @pytest.fixture(scope="function")
@@ -232,7 +232,7 @@ def tts_processor_fixture(test_db, mock_storage, mock_indextts_client):
     """创建测试TTS任务处理器"""
     voice_repo = VoiceRepository(test_db)
     upload_repo = UploadRepository(test_db)
-    file_service = FileApplicationService(mock_storage)
+    file_service = FileService(mock_storage)
     return TtsTaskProcessor(
         voice_repo, upload_repo, mock_storage, mock_indextts_client, file_service
     )
@@ -241,7 +241,7 @@ def tts_processor_fixture(test_db, mock_storage, mock_indextts_client):
 @pytest.fixture(scope="function")
 def file_service_fixture(mock_storage):
     """创建测试文件处理服务"""
-    return FileApplicationService(mock_storage)
+    return FileService(mock_storage)
 
 
 @pytest.fixture(scope="function")
@@ -249,19 +249,19 @@ def mock_dependencies():
     """创建模拟依赖注入函数"""
 
     def mock_get_tts_service():
-        return Mock(spec=TtsApplicationService)
+        return Mock(spec=TtsService)
 
     def mock_get_voice_service():
-        return Mock(spec=VoiceApplicationService)
+        return Mock(spec=VoiceService)
 
     def mock_get_upload_service():
-        return Mock(spec=UploadApplicationService)
+        return Mock(spec=UploadService)
 
     def mock_get_queue_service():
-        return Mock(spec=QueueApplicationService)
+        return Mock(spec=QueueService)
 
     def mock_get_audio_service():
-        return Mock(spec=AudioApplicationService)
+        return Mock(spec=AudioService)
 
     def mock_get_tts_processor():
         return Mock(spec=TtsTaskProcessor)
@@ -317,7 +317,7 @@ def test_client_with_mocks(test_app, test_db, mock_dependencies):
 @pytest.fixture(scope="function")
 async def test_queue():
     """创建测试队列"""
-    # 队列现在通过 QueueApplicationService 管理，不需要单独的测试队列
+    # 队列现在通过 QueueService 管理，不需要单独的测试队列
     yield
 
 

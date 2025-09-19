@@ -21,7 +21,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query
 from fastapi.responses import JSONResponse
 from app.models import oc8r
 from app.dependencies import get_voice_service
-from app.application.voice_service import VoiceApplicationService
+from app.application.voice_service import VoiceService
 
 router = APIRouter()
 
@@ -35,7 +35,7 @@ router = APIRouter()
 )
 async def create_voice(
     body: oc8r.CreateVoiceRequest,
-    voice_service: VoiceApplicationService = Depends(get_voice_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ):
     """
     创建 Voice
@@ -66,7 +66,7 @@ async def create_voice(
 async def list_voices(
     limit: int = Query(100, ge=0),
     offset: int = Query(0, ge=0),
-    voice_service: VoiceApplicationService = Depends(get_voice_service),
+    voice_service: VoiceService = Depends(get_voice_service),
 ):
     """
     分页查询 Voice
@@ -86,7 +86,7 @@ async def list_voices(
     response_model=oc8r.VoiceResponse,
 )
 async def get_voice(
-    voice_id: str, voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_id: str, voice_service: VoiceService = Depends(get_voice_service)
 ):
     """
     查询单个 Voice
@@ -108,7 +108,7 @@ async def get_voice(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_voice(
-    voice_id: str, voice_service: VoiceApplicationService = Depends(get_voice_service)
+    voice_id: str, voice_service: VoiceService = Depends(get_voice_service)
 ):
     """
     删除 Voice 及其关联的 Upload 记录和文件

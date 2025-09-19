@@ -78,9 +78,9 @@ class QueueWorker:
         self._running = False
 
 
-class QueueApplicationService:
+class QueueService:
     """
-    Queue应用服务
+    Queue服务
 
     负责协调队列相关的业务用例，包括队列状态查询、队列处理启动和停止等操作。
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
@@ -88,7 +88,7 @@ class QueueApplicationService:
 
     def __init__(self, queue_manager: QueueManager, tts_processor):
         """
-        初始化Queue应用服务
+        初始化Queue服务
 
         Args:
             queue_manager: 队列管理器

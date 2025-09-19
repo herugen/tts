@@ -18,9 +18,9 @@ from app.infra.storage import LocalFileStorage
 from app.infra.repositories import UploadRepository
 
 
-class UploadApplicationService:
+class UploadService:
     """
-    Upload应用服务
+    Upload服务
 
     负责协调文件上传相关的业务用例，包括音频文件上传等操作。
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
@@ -30,7 +30,7 @@ class UploadApplicationService:
         self, storage: LocalFileStorage, upload_repo: Optional[UploadRepository] = None
     ):
         """
-        初始化Upload应用服务
+        初始化Upload服务
 
         Args:
             storage: 本地文件存储

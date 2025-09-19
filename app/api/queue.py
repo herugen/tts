@@ -16,7 +16,7 @@ from fastapi import APIRouter, status, Depends
 from fastapi.responses import JSONResponse
 from app.models import oc8r
 from app.dependencies import get_queue_service
-from app.application.queue_service import QueueApplicationService
+from app.application.queue_service import QueueService
 
 router = APIRouter()
 
@@ -29,7 +29,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
 )
 async def get_queue_status(
-    queue_service: QueueApplicationService = Depends(get_queue_service),
+    queue_service: QueueService = Depends(get_queue_service),
 ):
     """
     查询队列状态接口

@@ -22,13 +22,13 @@ import sqlite3
 from app.infra.repositories import TtsJobRepository, VoiceRepository, UploadRepository
 from app.infra.queue import get_queue_manager
 from app.infra.storage import LocalFileStorage
-from app.application.tts_service import TtsApplicationService
-from app.application.voice_service import VoiceApplicationService
-from app.application.upload_service import UploadApplicationService
-from app.application.queue_service import QueueApplicationService
-from app.application.audio_service import AudioApplicationService
+from app.application.tts_service import TtsService
+from app.application.voice_service import VoiceService
+from app.application.upload_service import UploadService
+from app.application.queue_service import QueueService
+from app.application.audio_service import AudioService
 from app.application.tts_processor import TtsTaskProcessor
-from app.application.file_service import FileApplicationService
+from app.application.file_service import FileService
 from app.infra.indextts_client import IndexTtsClient
 from app.db_conn import get_db_conn
 
@@ -57,17 +57,15 @@ class ApplicationContainer:
         self._services = {}
         self._initialized_services = set()
 
-    def get_tts_service(
-        self, db: Optional[sqlite3.Connection] = None
-    ) -> TtsApplicationService:
+    def get_tts_service(self, db: Optional[sqlite3.Connection] = None) -> TtsService:
         """
-        获取TTS应用服务实例
+        获取TTS服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            TtsApplicationService: TTS应用服务实例
+            TtsService: TTS服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -78,7 +76,7 @@ class ApplicationContainer:
             voice_repo = VoiceRepository(db)
             queue_manager = get_queue_manager()
 
-            self._services[service_key] = TtsApplicationService(
+            self._services[service_key] = TtsService(
                 job_repo, voice_repo, queue_manager
             )
             self._initialized_services.add(service_key)
@@ -87,15 +85,15 @@ class ApplicationContainer:
 
     def get_voice_service(
         self, db: Optional[sqlite3.Connection] = None
-    ) -> VoiceApplicationService:
+    ) -> VoiceService:
         """
-        获取Voice应用服务实例
+        获取Voice服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            VoiceApplicationService: Voice应用服务实例
+            VoiceService: Voice服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -106,24 +104,22 @@ class ApplicationContainer:
             upload_repo = UploadRepository(db)
             storage = LocalFileStorage()
 
-            self._services[service_key] = VoiceApplicationService(
-                voice_repo, storage, upload_repo
-            )
+            self._services[service_key] = VoiceService(voice_repo, storage, upload_repo)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]
 
     def get_upload_service(
         self, db: Optional[sqlite3.Connection] = None
-    ) -> UploadApplicationService:
+    ) -> UploadService:
         """
-        获取Upload应用服务实例
+        获取Upload服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            UploadApplicationService: Upload应用服务实例
+            UploadService: Upload服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -133,22 +129,22 @@ class ApplicationContainer:
             storage = LocalFileStorage()
             upload_repo = UploadRepository(db)
 
-            self._services[service_key] = UploadApplicationService(storage, upload_repo)
+            self._services[service_key] = UploadService(storage, upload_repo)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]
 
     def get_queue_service(
         self, db: Optional[sqlite3.Connection] = None
-    ) -> QueueApplicationService:
+    ) -> QueueService:
         """
-        获取Queue应用服务实例
+        获取Queue服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            QueueApplicationService: Queue应用服务实例
+            QueueService: Queue服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -159,24 +155,22 @@ class ApplicationContainer:
             # 通过容器获取TTS处理器依赖
             tts_processor = self.get_tts_processor(db)
 
-            self._services[service_key] = QueueApplicationService(
-                queue_manager, tts_processor
-            )
+            self._services[service_key] = QueueService(queue_manager, tts_processor)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]
 
     def get_audio_service(
         self, db: Optional[sqlite3.Connection] = None
-    ) -> AudioApplicationService:
+    ) -> AudioService:
         """
-        获取Audio应用服务实例
+        获取Audio服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            AudioApplicationService: Audio应用服务实例
+            AudioService: Audio服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -185,7 +179,7 @@ class ApplicationContainer:
         if service_key not in self._services:
             # 音频服务依赖文件服务
             file_service = self.get_file_service(db)
-            self._services[service_key] = AudioApplicationService(file_service)
+            self._services[service_key] = AudioService(file_service)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]
@@ -216,17 +210,15 @@ class ApplicationContainer:
 
         return self._services[service_key]
 
-    def get_file_service(
-        self, db: Optional[sqlite3.Connection] = None
-    ) -> FileApplicationService:
+    def get_file_service(self, db: Optional[sqlite3.Connection] = None) -> FileService:
         """
-        获取文件处理应用服务实例
+        获取文件处理服务实例
 
         Args:
             db: 数据库连接，如果为None则使用默认连接
 
         Returns:
-            FileApplicationService: 文件处理应用服务实例
+            FileService: 文件处理服务实例
         """
         if db is None:
             db = get_db_conn()
@@ -235,7 +227,7 @@ class ApplicationContainer:
         if service_key not in self._services:
             storage = LocalFileStorage()
 
-            self._services[service_key] = FileApplicationService(storage)
+            self._services[service_key] = FileService(storage)
             self._initialized_services.add(service_key)
 
         return self._services[service_key]

@@ -23,7 +23,7 @@ from app.models import oc8r
 from app.infra.indextts_client import IndexTtsClient
 from app.infra.repositories import VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
-from app.application.file_service import FileApplicationService
+from app.application.file_service import FileService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class TtsStrategy(ABC):
         voice_repo: VoiceRepository,
         upload_repo: UploadRepository,
         storage: LocalFileStorage,
-        file_service: FileApplicationService,
+        file_service: FileService,
     ):
         """
         初始化策略
@@ -322,7 +322,7 @@ class TtsStrategyFactory:
         voice_repo: VoiceRepository,
         upload_repo: UploadRepository,
         storage: LocalFileStorage,
-        file_service: FileApplicationService,
+        file_service: FileService,
     ) -> TtsStrategy:
         """
         根据TTS模式创建策略实例

@@ -10,7 +10,6 @@
 - 目前不做音频时长分析，durationSeconds 字段返回 None
 
 依赖说明：
-- 依赖 LocalFileStorage 进行文件校验与保存
 - 依赖 oc8r.UploadResponse/Upload 组装响应体
 """
 
@@ -18,7 +17,7 @@ from fastapi import APIRouter, UploadFile, File, status, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from app.models import oc8r
 from app.dependencies import get_upload_service
-from app.application.upload_service import UploadApplicationService
+from app.application.upload_service import UploadService
 
 router = APIRouter()
 
@@ -32,7 +31,7 @@ router = APIRouter()
 )
 async def upload_file(
     file: UploadFile = File(...),
-    upload_service: UploadApplicationService = Depends(get_upload_service),
+    upload_service: UploadService = Depends(get_upload_service),
 ):
     """
     上传音频文件接口

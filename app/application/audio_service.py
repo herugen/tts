@@ -12,23 +12,23 @@ Audio应用服务
 
 from typing import Optional
 from fastapi.responses import FileResponse
-from app.application.file_service import FileApplicationService
+from app.application.file_service import FileService
 
 
-class AudioApplicationService:
+class AudioService:
     """
-    Audio应用服务
+    Audio服务
 
     负责协调音频文件访问相关的业务用例，包括音频文件获取等操作。
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
     """
 
-    def __init__(self, file_service: FileApplicationService):
+    def __init__(self, file_service: "FileService"):
         """
-        初始化Audio应用服务
+        初始化Audio服务
 
         Args:
-            file_service: 文件处理应用服务
+            file_service: 文件处理服务
         """
         self.file_service = file_service
 

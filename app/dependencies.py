@@ -20,17 +20,17 @@ from fastapi import Depends
 import sqlite3
 from app.container import app_container
 from app.db_conn import get_db_conn
-from app.application.tts_service import TtsApplicationService
-from app.application.voice_service import VoiceApplicationService
-from app.application.upload_service import UploadApplicationService
-from app.application.queue_service import QueueApplicationService
-from app.application.audio_service import AudioApplicationService
+from app.application.tts_service import TtsService
+from app.application.voice_service import VoiceService
+from app.application.upload_service import UploadService
+from app.application.queue_service import QueueService
+from app.application.audio_service import AudioService
 from app.application.tts_processor import TtsTaskProcessor
 
 
 def get_tts_service(
     db: sqlite3.Connection = Depends(get_db_conn),
-) -> TtsApplicationService:
+) -> TtsService:
     """
     获取TTS应用服务实例
 
@@ -38,14 +38,14 @@ def get_tts_service(
         db: 数据库连接
 
     Returns:
-        TtsApplicationService: TTS应用服务实例
+        TtsService: TTS应用服务实例
     """
     return app_container.get_tts_service(db)
 
 
 def get_voice_service(
     db: sqlite3.Connection = Depends(get_db_conn),
-) -> VoiceApplicationService:
+) -> VoiceService:
     """
     获取Voice应用服务实例
 
@@ -53,14 +53,14 @@ def get_voice_service(
         db: 数据库连接
 
     Returns:
-        VoiceApplicationService: Voice应用服务实例
+        VoiceService: Voice应用服务实例
     """
     return app_container.get_voice_service(db)
 
 
 def get_upload_service(
     db: sqlite3.Connection = Depends(get_db_conn),
-) -> UploadApplicationService:
+) -> UploadService:
     """
     获取Upload应用服务实例
 
@@ -68,14 +68,14 @@ def get_upload_service(
         db: 数据库连接
 
     Returns:
-        UploadApplicationService: Upload应用服务实例
+        UploadService: Upload应用服务实例
     """
     return app_container.get_upload_service(db)
 
 
 def get_queue_service(
     db: sqlite3.Connection = Depends(get_db_conn),
-) -> QueueApplicationService:
+) -> QueueService:
     """
     获取Queue应用服务实例
 
@@ -83,14 +83,14 @@ def get_queue_service(
         db: 数据库连接
 
     Returns:
-        QueueApplicationService: Queue应用服务实例
+        QueueService: Queue应用服务实例
     """
     return app_container.get_queue_service(db)
 
 
 def get_audio_service(
     db: sqlite3.Connection = Depends(get_db_conn),
-) -> AudioApplicationService:
+) -> AudioService:
     """
     获取Audio应用服务实例
 
@@ -98,7 +98,7 @@ def get_audio_service(
         db: 数据库连接
 
     Returns:
-        AudioApplicationService: Audio应用服务实例
+        AudioService: Audio应用服务实例
     """
     return app_container.get_audio_service(db)
 

@@ -19,7 +19,7 @@ from app.application.tts_strategies import TtsStrategyFactory
 from app.infra.indextts_client import IndexTtsClient, IndexTtsBusyError
 from app.infra.repositories import VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
-from app.application.file_service import FileApplicationService
+from app.application.file_service import FileService
 import asyncio
 from fastapi import HTTPException
 
@@ -40,7 +40,7 @@ class TtsTaskProcessor:
         upload_repo: UploadRepository,
         storage: LocalFileStorage,
         client: IndexTtsClient,
-        file_service: FileApplicationService,
+        file_service: FileService,
     ):
         """
         初始化TTS任务处理器

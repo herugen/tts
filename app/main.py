@@ -49,14 +49,6 @@ async def lifespan(_: FastAPI):
     app_container.get_all_services()
     logger.info("Application services initialized successfully")
 
-    # 获取TTS应用服务，用于注册状态变更回调
-    tts_service = app_container.get_tts_service()
-
-    # 获取队列管理器并注册状态变更回调
-    queue_manager = get_queue_manager()
-    queue_manager.set_callback(tts_service.handle_status_change)
-    logger.info("Job status change callback registered")
-
     # 获取队列应用服务并启动队列处理
     queue_service = app_container.get_queue_service()
     await queue_service.start_processing()

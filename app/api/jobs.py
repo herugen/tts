@@ -22,7 +22,7 @@ from fastapi.responses import JSONResponse
 from typing import Optional
 from app.models import oc8r
 from app.dependencies import get_tts_service
-from app.application.tts_service import TtsApplicationService
+from app.application.tts_service import TtsService
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ router = APIRouter()
 )
 async def create_tts_job(
     body: oc8r.CreateTtsJobRequest,
-    tts_service: TtsApplicationService = Depends(get_tts_service),
+    tts_service: TtsService = Depends(get_tts_service),
 ):
     """
     提交 TTS 任务，入队并返回 202 TtsJobResponse（状态为 queued）
@@ -65,9 +65,7 @@ async def create_tts_job(
     response_model=oc8r.TtsJobResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_tts_job(
-    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
-):
+async def get_tts_job(job_id: str, tts_service: TtsService = Depends(get_tts_service)):
     """
     查询 TTS 任务
     - 委托给TTS应用服务处理业务逻辑
@@ -92,7 +90,7 @@ async def list_tts_jobs(
     job_status: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
-    tts_service: TtsApplicationService = Depends(get_tts_service),
+    tts_service: TtsService = Depends(get_tts_service),
 ):
     """
     查询 TTS 任务
@@ -113,7 +111,7 @@ async def list_tts_jobs(
     status_code=status.HTTP_200_OK,
 )
 async def cancel_tts_job(
-    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
+    job_id: str, tts_service: TtsService = Depends(get_tts_service)
 ):
     """
     取消 TTS 任务
@@ -148,7 +146,7 @@ async def cancel_tts_job(
     status_code=status.HTTP_201_CREATED,
 )
 async def retry_tts_job(
-    job_id: str, tts_service: TtsApplicationService = Depends(get_tts_service)
+    job_id: str, tts_service: TtsService = Depends(get_tts_service)
 ):
     """
     重试 TTS 任务

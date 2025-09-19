@@ -20,9 +20,9 @@ from app.infra.storage import LocalFileStorage
 logger = logging.getLogger(__name__)
 
 
-class FileApplicationService:
+class FileService:
     """
-    文件处理应用服务
+    文件处理服务
 
     负责处理文件相关的业务逻辑，包括音频文件保存、路径生成等。
     作为应用层的业务服务，只包含业务逻辑，不包含技术实现细节。
@@ -30,7 +30,7 @@ class FileApplicationService:
 
     def __init__(self, storage: LocalFileStorage):
         """
-        初始化文件处理应用服务
+        初始化文件处理服务
 
         Args:
             storage: 文件存储服务

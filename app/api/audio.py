@@ -14,14 +14,14 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from app.dependencies import get_audio_service
-from app.application.audio_service import AudioApplicationService
+from app.application.audio_service import AudioService
 
 router = APIRouter()
 
 
 @router.get("/audio/{filename}", summary="获取音频文件", tags=["Audio"])
 async def get_audio_file(
-    filename: str, audio_service: AudioApplicationService = Depends(get_audio_service)
+    filename: str, audio_service: AudioService = Depends(get_audio_service)
 ):
     """
     获取音频文件

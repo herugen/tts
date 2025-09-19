@@ -21,9 +21,9 @@ from app.infra.repositories import VoiceRepository, UploadRepository
 from app.infra.storage import LocalFileStorage
 
 
-class VoiceApplicationService:
+class VoiceService:
     """
-    Voice应用服务
+    Voice服务
 
     负责协调音色管理相关的业务用例，包括音色创建、查询、删除等操作。
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
@@ -36,7 +36,7 @@ class VoiceApplicationService:
         upload_repo: Optional[UploadRepository] = None,
     ):
         """
-        初始化Voice应用服务
+        初始化Voice服务
 
         Args:
             voice_repo: 音色仓储

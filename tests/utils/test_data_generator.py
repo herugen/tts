@@ -9,7 +9,7 @@
 - 保持与重构后业务代码的兼容性
 
 架构层次：
-- 应用层：TtsApplicationService, VoiceApplicationService, UploadApplicationService等
+- 应用层：TtsApplicationService, VoiceService, UploadApplicationService等
 - 领域层：TtsJob, Voice, Upload等模型
 - 基础设施层：Repository, Storage等
 - 策略层：TtsStrategy及其实现类
@@ -20,12 +20,12 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from unittest.mock import Mock
 from app.models import oc8r
-from app.application.tts_service import TtsApplicationService
-from app.application.voice_service import VoiceApplicationService
-from app.application.upload_service import UploadApplicationService
-from app.application.queue_service import QueueApplicationService
-from app.application.audio_service import AudioApplicationService
-from app.application.file_service import FileApplicationService
+from app.application.tts_service import TtsService
+from app.application.voice_service import VoiceService
+from app.application.upload_service import UploadService
+from app.application.queue_service import QueueService
+from app.application.audio_service import AudioService
+from app.application.file_service import FileService
 from app.application.tts_processor import TtsTaskProcessor
 from app.application.tts_strategies import (
     SpeakerStrategy,
@@ -265,7 +265,7 @@ class TestDataGenerator:
         job_repo: Optional[TtsJobRepository] = None,
         voice_repo: Optional[VoiceRepository] = None,
         queue_manager: Optional[QueueManager] = None,
-    ) -> TtsApplicationService:
+    ) -> TtsService:
         """创建TTS应用服务实例"""
         if job_repo is None:
             job_repo = Mock(spec=TtsJobRepository)
@@ -274,14 +274,14 @@ class TestDataGenerator:
         if queue_manager is None:
             queue_manager = Mock(spec=QueueManager)
 
-        return TtsApplicationService(job_repo, voice_repo, queue_manager)
+        return TtsService(job_repo, voice_repo, queue_manager)
 
     @staticmethod
     def create_voice_application_service(
         voice_repo: Optional[VoiceRepository] = None,
         storage: Optional[LocalFileStorage] = None,
         upload_repo: Optional[UploadRepository] = None,
-    ) -> VoiceApplicationService:
+    ) -> VoiceService:
         """创建Voice应用服务实例"""
         if voice_repo is None:
             voice_repo = Mock(spec=VoiceRepository)
@@ -290,50 +290,50 @@ class TestDataGenerator:
         if upload_repo is None:
             upload_repo = Mock(spec=UploadRepository)
 
-        return VoiceApplicationService(voice_repo, storage, upload_repo)
+        return VoiceService(voice_repo, storage, upload_repo)
 
     @staticmethod
     def create_upload_application_service(
         storage: Optional[LocalFileStorage] = None,
-    ) -> UploadApplicationService:
+    ) -> UploadService:
         """创建Upload应用服务实例"""
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
 
-        return UploadApplicationService(storage)
+        return UploadService(storage)
 
     @staticmethod
     def create_queue_application_service(
         queue_manager: Optional[QueueManager] = None,
         tts_processor: Optional[TtsTaskProcessor] = None,
-    ) -> QueueApplicationService:
+    ) -> QueueService:
         """创建Queue应用服务实例"""
         if queue_manager is None:
             queue_manager = Mock(spec=QueueManager)
         if tts_processor is None:
             tts_processor = Mock(spec=TtsTaskProcessor)
 
-        return QueueApplicationService(queue_manager, tts_processor)
+        return QueueService(queue_manager, tts_processor)
 
     @staticmethod
     def create_audio_application_service(
-        file_service: Optional[FileApplicationService] = None,
-    ) -> AudioApplicationService:
+        file_service: Optional[FileService] = None,
+    ) -> AudioService:
         """创建Audio应用服务实例"""
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
-        return AudioApplicationService(file_service)
+        return AudioService(file_service)
 
     @staticmethod
     def create_file_application_service(
         storage: Optional[LocalFileStorage] = None,
-    ) -> FileApplicationService:
+    ) -> FileService:
         """创建File应用服务实例"""
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
 
-        return FileApplicationService(storage)
+        return FileService(storage)
 
     @staticmethod
     def create_tts_task_processor(
@@ -341,7 +341,7 @@ class TestDataGenerator:
         upload_repo: Optional[UploadRepository] = None,
         storage: Optional[LocalFileStorage] = None,
         client: Optional[IndexTtsClient] = None,
-        file_service: Optional[FileApplicationService] = None,
+        file_service: Optional[FileService] = None,
     ) -> TtsTaskProcessor:
         """创建TTS任务处理器实例"""
         if voice_repo is None:
@@ -353,7 +353,7 @@ class TestDataGenerator:
         if client is None:
             client = Mock(spec=IndexTtsClient)
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
         return TtsTaskProcessor(voice_repo, upload_repo, storage, client, file_service)
 
@@ -365,7 +365,7 @@ class TestDataGenerator:
         voice_repo: Optional[VoiceRepository] = None,
         upload_repo: Optional[UploadRepository] = None,
         storage: Optional[LocalFileStorage] = None,
-        file_service: Optional[FileApplicationService] = None,
+        file_service: Optional[FileService] = None,
     ) -> SpeakerStrategy:
         """创建Speaker策略实例"""
         if client is None:
@@ -377,7 +377,7 @@ class TestDataGenerator:
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
         return SpeakerStrategy(client, voice_repo, upload_repo, storage, file_service)
 
@@ -387,7 +387,7 @@ class TestDataGenerator:
         voice_repo: Optional[VoiceRepository] = None,
         upload_repo: Optional[UploadRepository] = None,
         storage: Optional[LocalFileStorage] = None,
-        file_service: Optional[FileApplicationService] = None,
+        file_service: Optional[FileService] = None,
     ) -> ReferenceStrategy:
         """创建Reference策略实例"""
         if client is None:
@@ -399,7 +399,7 @@ class TestDataGenerator:
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
         return ReferenceStrategy(client, voice_repo, upload_repo, storage, file_service)
 
@@ -409,7 +409,7 @@ class TestDataGenerator:
         voice_repo: Optional[VoiceRepository] = None,
         upload_repo: Optional[UploadRepository] = None,
         storage: Optional[LocalFileStorage] = None,
-        file_service: Optional[FileApplicationService] = None,
+        file_service: Optional[FileService] = None,
     ) -> VectorStrategy:
         """创建Vector策略实例"""
         if client is None:
@@ -421,7 +421,7 @@ class TestDataGenerator:
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
         return VectorStrategy(client, voice_repo, upload_repo, storage, file_service)
 
@@ -431,7 +431,7 @@ class TestDataGenerator:
         voice_repo: Optional[VoiceRepository] = None,
         upload_repo: Optional[UploadRepository] = None,
         storage: Optional[LocalFileStorage] = None,
-        file_service: Optional[FileApplicationService] = None,
+        file_service: Optional[FileService] = None,
     ) -> TextStrategy:
         """创建Text策略实例"""
         if client is None:
@@ -443,7 +443,7 @@ class TestDataGenerator:
         if storage is None:
             storage = Mock(spec=LocalFileStorage)
         if file_service is None:
-            file_service = Mock(spec=FileApplicationService)
+            file_service = Mock(spec=FileService)
 
         return TextStrategy(client, voice_repo, upload_repo, storage, file_service)
 
@@ -561,7 +561,7 @@ class TestDataGenerator:
         storage = Mock(spec=LocalFileStorage)
         queue_manager = Mock(spec=QueueManager)
         client = Mock(spec=IndexTtsClient)
-        file_service = Mock(spec=FileApplicationService)
+        file_service = Mock(spec=FileService)
 
         # 设置模拟行为
         TestDataGenerator.setup_mock_voice_repo(voice_repo, [voice])
@@ -588,9 +588,7 @@ class TestDataGenerator:
         queue_service = TestDataGenerator.create_queue_application_service(
             queue_manager, processor
         )
-        audio_service = TestDataGenerator.create_audio_application_service(
-            file_service
-        )
+        audio_service = TestDataGenerator.create_audio_application_service(file_service)
 
         return {
             "data": {"voice": voice, "upload": upload, "job": job},

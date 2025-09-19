@@ -31,9 +31,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TtsApplicationService:
+class TtsService:
     """
-    TTS应用服务
+    TTS服务
 
     负责协调TTS任务相关的业务用例，包括任务创建、查询、取消、重试等操作。
     作为接口层和领域层之间的桥梁，只做业务协调，不包含具体业务逻辑。
@@ -46,7 +46,7 @@ class TtsApplicationService:
         queue_manager: QueueManager,
     ):
         """
-        初始化TTS应用服务
+        初始化TTS服务
 
         Args:
             job_repo: TTS任务仓储
@@ -56,6 +56,7 @@ class TtsApplicationService:
         self.job_repo = job_repo
         self.voice_repo = voice_repo
         self.queue_manager = queue_manager
+        self.queue_manager.set_callback(self.handle_status_change)
 
     async def create_job(self, request: CreateTtsJobRequest) -> TtsJob:
         """
