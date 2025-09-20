@@ -5,7 +5,7 @@ services:
     build: .
     container_name: tts-service
     ports:
-      - "8000:8000"
+      - "9020:9020"
     volumes:
       # 挂载数据目录，持久化上传的文件和生成的音频
       - ./data:/app/data
@@ -13,15 +13,16 @@ services:
       - ./data/tts.db:/app/data/tts.db
     environment:
       # TTS服务配置
-      - INDEX_TTS_BASE_URL=${INDEX_TTS_BASE_URL:-http://10.0.10.42:8000}
+      - INDEX_TTS_BASE_URL=${INDEX_TTS_BASE_URL:-http://10.0.10.42:9010}
       - INDEX_TTS_TIMEOUT=${INDEX_TTS_TIMEOUT:-1800.0}
+      - TTS_BASE_URL=${TTS_BASE_URL:-http://10.0.10.42:9020}
       - UPLOAD_DIR=${UPLOAD_DIR:-data/uploads}
       # Python配置
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/v1/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:9020/api/v1/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

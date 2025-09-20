@@ -36,13 +36,13 @@ RUN mkdir -p data/uploads data/outputs
 # 设置目录权限
 RUN chmod -R 755 data/
 
-# 暴露端口（FastAPI默认端口8000）
-EXPOSE 8000
+# 暴露端口（FastAPI默认端口9020）
+EXPOSE 9020
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/v1/health')" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:9020/api/v1/health')" || exit 1
 
 # 启动命令
 # 使用uvicorn启动FastAPI应用，绑定到所有接口，启用热重载（开发环境）
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "9020", "--reload"]
